@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
         sv.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                System.out.println("Surface created.");
                 if (ContextCompat.checkSelfPermission(thisActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                     setupCamera();
                 } else {
