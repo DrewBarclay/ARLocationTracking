@@ -4,11 +4,14 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.PixelFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +20,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -24,24 +28,50 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 public class MainActivity extends AppCompatActivity {
 
     public static final int PERMISSIONS_REQUEST_CAMERA = 42;
+    private GLSurfaceView mGLSurfaceView;
+    private SurfaceView mSurfaceView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        //setContentView(R.layout.activity_main);
 
+        //Set up openGL rendering
+        mGLSurfaceView = new GLSurfaceView(this);
+        addContentView(mGLSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        mGLSurfaceView.setEGLContextClientVersion(2);
+        mGLSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
+        mGLSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        mGLSurfaceView.setRenderer(new GLSurfaceView.Renderer() {
+            @Override
+            public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+                GLES20.glClearColor(0.0f, 0.0f, 1.0f, 0.3f);
+            }
 
-        setContentView(R.layout.activity_main);
+            @Override
+            public void onSurfaceChanged(GL10 gl, int width, int height) {
+                GLES20.glViewport(0, 0, width, height);
+            }
+
+            @Override
+            public void onDrawFrame(GL10 gl) {
+                // Redraw background color
+                GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+            }
+        });
 
         //Set up camera
-        SurfaceView sv = (SurfaceView)findViewById(R.id.surfaceView);
+        mSurfaceView = new SurfaceView(this);
+        addContentView(mSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         final Activity thisActivity = this;
-        sv.getHolder().addCallback(new SurfaceHolder.Callback() {
+        mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 if (ContextCompat.checkSelfPermission(thisActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -66,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        
+
         // Hide both the navigation bar and the status bar.
         View decorView = getWindow().getDecorView();
         int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
@@ -84,8 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onOpened(final CameraDevice camera) {
                     try {
-                        SurfaceView sv = (SurfaceView)findViewById(R.id.surfaceView);
-                        final Surface surface = sv.getHolder().getSurface();
+                        final Surface surface = mSurfaceView.getHolder().getSurface();
                         camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                             @Override
                             public void onConfigured(CameraCaptureSession session) {
