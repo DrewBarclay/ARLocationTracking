@@ -1,5 +1,9 @@
 package g20capstone.cameratest;
 
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -12,7 +16,7 @@ import javax.microedition.khronos.opengles.GL10;
  * Created by Drew on 2/16/2017.
  */
 
-public class ARRenderer implements GLSurfaceView.Renderer {
+public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private Triangle mTriangle;
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
@@ -20,6 +24,23 @@ public class ARRenderer implements GLSurfaceView.Renderer {
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
 
+    private final float[] mRotationMatrix = new float[16];
+
+    private SensorManager mSensorManager;
+    private Sensor mRotationSensor;
+
+    public ARRenderer(SensorManager sensorManager) {
+        mSensorManager = sensorManager;
+        mRotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+    }
+
+    public void onResume() {
+        mSensorManager.registerListener(this, mRotationSensor, 10000); //10ms
+    }
+
+    public void onPause() {
+        mSensorManager.unregisterListener(this);
+    }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
@@ -45,6 +66,9 @@ public class ARRenderer implements GLSurfaceView.Renderer {
 
         // Set the camera position (View matrix)
         Matrix.setLookAtM(mViewMatrix, 0, 0, 0, -3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+
+        //Rotate based on orientation
+        Matrix.multiplyMM(mViewMatrix, 0, mRotationMatrix, 0, mViewMatrix, 0);
 
         // Calculate the projection and view transformation
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
@@ -72,5 +96,20 @@ public class ARRenderer implements GLSurfaceView.Renderer {
             Log.e("OpenGL", glOperation + ": glError " + error);
             throw new RuntimeException(glOperation + ": glError " + error);
         }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            // convert the rotation-vector to a 4x4 matrix. the matrix
+            // is interpreted by Open GL as the inverse of the
+            // rotation-vector, which is what we want.
+            SensorManager.getRotationMatrixFromVector(mRotationMatrix, event.values);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 }

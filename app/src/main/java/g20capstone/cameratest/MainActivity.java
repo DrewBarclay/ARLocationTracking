@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
@@ -34,14 +36,15 @@ import javax.microedition.khronos.opengles.GL10;
 public class MainActivity extends AppCompatActivity {
 
     public static final int PERMISSIONS_REQUEST_CAMERA = 42;
+
     private GLSurfaceView mGLSurfaceView;
     private SurfaceView mSurfaceView;
+    private ARRenderer mARRenderer;
+    private CameraCallback mCameraCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        //setContentView(R.layout.activity_main);
 
         //Set up openGL rendering
         mGLSurfaceView = new GLSurfaceView(this);
@@ -49,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
         mGLSurfaceView.setEGLContextClientVersion(2);
         mGLSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
         mGLSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        mGLSurfaceView.setRenderer(new ARRenderer());
+        mARRenderer = new ARRenderer((SensorManager) getSystemService(Context.SENSOR_SERVICE));
+        mGLSurfaceView.setRenderer(mARRenderer);
 
         //Set up camera
         mSurfaceView = new SurfaceView(this);
@@ -78,8 +82,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+
+        mARRenderer.onPause();
+        mGLSurfaceView.onPause();
+
+        if (mCameraCallback != null) {
+            mCameraCallback.onPause();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+
+        mARRenderer.onResume();
+        mGLSurfaceView.onResume();
+
+        if (mCameraCallback != null) {
+            mCameraCallback.onResume();
+        }
 
         // Hide both the navigation bar and the status bar.
         View decorView = getWindow().getDecorView();
@@ -93,47 +116,9 @@ public class MainActivity extends AppCompatActivity {
             CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
             String camId = manager.getCameraIdList()[0];
 
-            CameraDevice.StateCallback callback = new CameraDevice.StateCallback() {
-
-                @Override
-                public void onOpened(final CameraDevice camera) {
-                    try {
-                        final Surface surface = mSurfaceView.getHolder().getSurface();
-                        camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                            @Override
-                            public void onConfigured(CameraCaptureSession session) {
-                                try {
-                                    CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                                    builder.addTarget(surface);
-                                    session.setRepeatingBurst(Arrays.asList(builder.build()), null, null);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-
-                            @Override
-                            public void onConfigureFailed(CameraCaptureSession session) {
-
-                            }
-                        }, null);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onDisconnected(CameraDevice camera) {
-
-                }
-
-                @Override
-                public void onError(CameraDevice camera, int error) {
-
-                }
-            };
-
             try {
-                manager.openCamera(camId, callback, null);
+                mCameraCallback = new CameraCallback(mSurfaceView);
+                manager.openCamera(camId, mCameraCallback, null);
             } catch (SecurityException e) {
                 e.printStackTrace();
             }
