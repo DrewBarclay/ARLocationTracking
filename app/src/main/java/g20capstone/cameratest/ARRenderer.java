@@ -17,12 +17,14 @@ import javax.microedition.khronos.opengles.GL10;
  */
 
 public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
-    private Triangle mTriangle;
+
+    private Cube mCube;
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
     private final float[] mMVPMatrix = new float[16];
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
+    private final float[] mModelMatrix = new float[16];
 
     private final float[] mRotationMatrix = new float[16];
 
@@ -46,7 +48,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-        mTriangle = new Triangle();
+        mCube = new Cube();
     }
 
     @Override
@@ -64,16 +66,21 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
+        Matrix.setIdentityM(mModelMatrix, 0);
+        Matrix.translateM(mModelMatrix, 0, 0, 0, 5.0f);
+
         // Set the camera position (View matrix)
-        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, -3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, 0f, 0f, 3f, 0f, 1.0f, 0.0f);
 
         //Rotate based on orientation
         Matrix.multiplyMM(mViewMatrix, 0, mRotationMatrix, 0, mViewMatrix, 0);
 
+        Matrix.multiplyMM(mViewMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+
         // Calculate the projection and view transformation
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
-        mTriangle.draw(mMVPMatrix);
+        mCube.draw(mMVPMatrix);
     }
 
     //Code copied from Google's sample code.
