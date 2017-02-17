@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 
+import java.util.Map;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -19,6 +21,8 @@ import javax.microedition.khronos.opengles.GL10;
  */
 
 public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
+
+    private TagParser mTagParser;
 
     private Display mDisplay;
 
@@ -35,10 +39,11 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mRotationSensor;
 
-    public ARRenderer(SensorManager sensorManager, Display display) {
+    public ARRenderer(SensorManager sensorManager, Display display, TagParser tagParser) {
         mDisplay = display;
         mSensorManager = sensorManager;
         mRotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        mTagParser = tagParser;
     }
 
     public void onResume() {
@@ -63,7 +68,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
         // this projection matrix is applied to object coordinates
         // in the onDrawFrame() method
-        Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+        Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 2, 200);
     }
 
     @Override
@@ -77,15 +82,24 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         //Rotate based on orientation
         Matrix.multiplyMM(mViewMatrix, 0, mRotationMatrix, 0, mViewMatrix, 0);
 
-        for (int i = 0; i < 2; i++) {
-            // Calculate the projection and view transformation
-            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        // Calculate the projection and view transformation
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
-            //Draw two cubes, one at (0, 0, 5), the other at (0, 0, -5)
-            Matrix.setIdentityM(mModelMatrix, 0);
-            Matrix.translateM(mModelMatrix, 0, 0, 0, 10.0f * i - 5.0f);
-            Matrix.multiplyMM(mMVPMatrix, 0, mMVPMatrix, 0, mModelMatrix, 0);
-            mCube.draw(mMVPMatrix);
+        //Draw cubes on positions grabbed
+        Map<Integer, Point3D> positions = mTagParser.getPositions();
+        if (positions != null) {
+            Point3D ourPos = positions.get(5);
+            if (ourPos != null) {
+                for (Map.Entry<Integer, Point3D> e : positions.entrySet()) {
+                    if (e.getKey() != 5) {
+                        Point3D pos = e.getValue();
+                        Matrix.setIdentityM(mModelMatrix, 0);
+                        Matrix.translateM(mModelMatrix, 0, 5f * (float) (pos.x - ourPos.x), 5f * (float) (pos.y - ourPos.y), 5f * (float) (pos.z - ourPos.z));
+                        Matrix.multiplyMM(mMVPMatrix, 0, mMVPMatrix, 0, mModelMatrix, 0);
+                        mCube.draw(mMVPMatrix);
+                    }
+                }
+            }
         }
     }
 
