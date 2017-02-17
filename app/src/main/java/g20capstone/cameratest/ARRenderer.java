@@ -8,6 +8,8 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -17,6 +19,8 @@ import javax.microedition.khronos.opengles.GL10;
  */
 
 public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
+
+    private Display mDisplay;
 
     private Cube mCube;
 
@@ -31,7 +35,8 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mRotationSensor;
 
-    public ARRenderer(SensorManager sensorManager) {
+    public ARRenderer(SensorManager sensorManager, Display display) {
+        mDisplay = display;
         mSensorManager = sensorManager;
         mRotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
     }
@@ -66,21 +71,22 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        Matrix.setIdentityM(mModelMatrix, 0);
-        Matrix.translateM(mModelMatrix, 0, 0, 0, 5.0f);
-
         // Set the camera position (View matrix)
         Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, 0f, 0f, 3f, 0f, 1.0f, 0.0f);
 
         //Rotate based on orientation
         Matrix.multiplyMM(mViewMatrix, 0, mRotationMatrix, 0, mViewMatrix, 0);
 
-        Matrix.multiplyMM(mViewMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+        for (int i = 0; i < 2; i++) {
+            // Calculate the projection and view transformation
+            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
-        // Calculate the projection and view transformation
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
-
-        mCube.draw(mMVPMatrix);
+            //Draw two cubes, one at (0, 0, 5), the other at (0, 0, -5)
+            Matrix.setIdentityM(mModelMatrix, 0);
+            Matrix.translateM(mModelMatrix, 0, 0, 0, 10.0f * i - 5.0f);
+            Matrix.multiplyMM(mMVPMatrix, 0, mMVPMatrix, 0, mModelMatrix, 0);
+            mCube.draw(mMVPMatrix);
+        }
     }
 
     //Code copied from Google's sample code.
@@ -108,10 +114,23 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-            // convert the rotation-vector to a 4x4 matrix. the matrix
-            // is interpreted by Open GL as the inverse of the
-            // rotation-vector, which is what we want.
-            SensorManager.getRotationMatrixFromVector(mRotationMatrix, event.values);
+            float[] tempMatrix = new float[16];
+            SensorManager.getRotationMatrixFromVector(tempMatrix, event.values);
+            //Remap based on device orientation. Note: these values are the opposite of what you might expect because the rotation matrix above is inverted.
+            switch (mDisplay.getRotation()) {
+                case Surface.ROTATION_0:
+                    SensorManager.remapCoordinateSystem(tempMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Y, mRotationMatrix);
+                    break;
+                case Surface.ROTATION_90:
+                    SensorManager.remapCoordinateSystem(tempMatrix, SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, mRotationMatrix);
+                    break;
+                case Surface.ROTATION_180:
+                    SensorManager.remapCoordinateSystem(tempMatrix, SensorManager.AXIS_MINUS_X, SensorManager.AXIS_MINUS_Y, mRotationMatrix);
+                    break;
+                case Surface.ROTATION_270:
+                    SensorManager.remapCoordinateSystem(tempMatrix, SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X, mRotationMatrix);
+                    break;
+            }
         }
     }
 

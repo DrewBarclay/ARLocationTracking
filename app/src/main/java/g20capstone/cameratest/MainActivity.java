@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         mGLSurfaceView.setEGLContextClientVersion(2);
         mGLSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
         mGLSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        mARRenderer = new ARRenderer((SensorManager) getSystemService(Context.SENSOR_SERVICE));
+        mARRenderer = new ARRenderer((SensorManager) getSystemService(Context.SENSOR_SERVICE), getWindowManager().getDefaultDisplay());
         mGLSurfaceView.setRenderer(mARRenderer);
 
         //Set up camera
