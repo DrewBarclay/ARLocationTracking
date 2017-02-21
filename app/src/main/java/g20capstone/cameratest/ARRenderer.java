@@ -30,6 +30,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
     private final float[] mMVPMatrix = new float[16];
+    private final float[] mVPMatrix = new float[16];
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
     private final float[] mModelMatrix = new float[16];
@@ -83,7 +84,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         Matrix.multiplyMM(mViewMatrix, 0, mRotationMatrix, 0, mViewMatrix, 0);
 
         // Calculate the projection and view transformation
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+        Matrix.multiplyMM(mVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
         //Draw cubes on positions grabbed
         Map<Integer, Point3D> positions = mTagParser.getPositions();
@@ -95,7 +96,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
                         Point3D pos = e.getValue();
                         Matrix.setIdentityM(mModelMatrix, 0);
                         Matrix.translateM(mModelMatrix, 0, 5f * (float) (pos.x - ourPos.x), 5f * (float) (pos.y - ourPos.y), 5f * (float) (pos.z - ourPos.z));
-                        Matrix.multiplyMM(mMVPMatrix, 0, mMVPMatrix, 0, mModelMatrix, 0);
+                        Matrix.multiplyMM(mMVPMatrix, 0, mVPMatrix, 0, mModelMatrix, 0);
                         mCube.draw(mMVPMatrix);
                     }
                 }
