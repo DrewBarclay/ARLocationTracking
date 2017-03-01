@@ -5,5 +5,11 @@
 /.idea/libraries
 .DS_Store
 /build
+/texample23D/build
 /captures
 .externalNativeBuild
+*.aux
+*.lof
+*.log
+*.gz
+*.toc
