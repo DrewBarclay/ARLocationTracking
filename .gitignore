@@ -13,3 +13,6 @@
 *.log
 *.gz
 *.toc
+*.lot
+*.out
+*.run.xml
