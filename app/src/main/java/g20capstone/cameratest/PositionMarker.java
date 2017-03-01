@@ -134,20 +134,17 @@ public class PositionMarker {
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
     }
 
-    public void drawAtPosition(float[] vpMatrix, float[] vMatrix, float x, float y, float z) {
+    public void drawAtPosition(float[] vpMatrix, float[] invertedViewMatrix, float x, float y, float z) {
         //Start by calculating inverted view matrix to reverse-rotate the object so that, when rotated, it faces the camera
         //Also translate the object appropriately.
         float[] translationMatrix = new float[16];
-        float[] invertedViewMatrix = new float[16];
         float[] modelMatrix = new float[16];
         float[] mvpMatrix = new float[16];
 
         Matrix.setIdentityM(translationMatrix, 0);
         Matrix.translateM(translationMatrix, 0, x, y, z);
 
-        Matrix.invertM(invertedViewMatrix, 0, vMatrix, 0); //Invert this matrix so as to make things point at the camera
         Matrix.multiplyMM(modelMatrix, 0, translationMatrix, 0, invertedViewMatrix, 0);
-
         Matrix.multiplyMM(mvpMatrix, 0, vpMatrix, 0, modelMatrix, 0);
 
         //Now do the actual drawing with the MVP matrix

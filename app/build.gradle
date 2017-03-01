@@ -29,4 +29,5 @@ dependencies {
     compile 'com.google.vr:sdk-audio:1.20.0'
     compile 'com.google.vr:sdk-base:1.20.0'
     compile project(':d2xx')
+    compile project(':texample23D')
 }
