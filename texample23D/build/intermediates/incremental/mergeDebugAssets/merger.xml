@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<merger version="3"><dataSet config="main"><source path="D:\Programs\Android\CameraTest\texample23D\src\main\assets"><file name="Roboto-Regular.ttf" path="D:\Programs\Android\CameraTest\texample23D\src\main\assets\Roboto-Regular.ttf"/></source><source path="D:\Programs\Android\CameraTest\texample23D\build\generated\assets\shaders\debug"/></dataSet><dataSet config="debug"><source path="D:\Programs\Android\CameraTest\texample23D\src\debug\assets"/></dataSet></merger>
