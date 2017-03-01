@@ -45,6 +45,8 @@ headsepline, % Uncomment to get a line under the header
 
 \usepackage{textcomp} %copyright
 
+\usepackage{listings} %for code highlighting
+
 \usepackage[backend=bibtex,style=authoryear,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
 
 \addbibresource{example.bib} % The filename of the bibliography
@@ -291,12 +293,10 @@ $\omega$ & angular frequency & \si{\radian} \\
 % Uncomment the lines as you write the chapters
 
 \include{Chapters/Introduction}
+\include{Chapters/Rangefinding}
+\include{Chapters/PositionCalculation}
+\include{Chapters/AugmentedReality}
 \include{Chapters/Conclusion}
-%\include{Chapters/Chapter1}
-%\include{Chapters/Chapter2} 
-%\include{Chapters/Chapter3}
-%\include{Chapters/Chapter4} 
-%\include{Chapters/Chapter5} 
 
 %----------------------------------------------------------------------------------------
 %	THESIS CONTENT - APPENDICES
@@ -307,7 +307,7 @@ $\omega$ & angular frequency & \si{\radian} \\
 % Include the appendices of the thesis as separate files from the Appendices folder
 % Uncomment the lines as you write the Appendices
 
-\include{Appendices/AppendixA}
+\include{Appendices/ArduinoCode}
 %\include{Appendices/AppendixB}
 %\include{Appendices/AppendixC}
 

@@ -1,0 +1,40 @@
+% Rangefinding
+
+\chapter{Rangefinding} % Main chapter title
+
+\label{Rangefinding}
+
+%----------------------------------------------------------------------------------------
+
+\section{Overview}
+Talk about the goal of this section: to get a bunch of devices determining their range to each other wirelessly.
+
+Go over the setup of tags/anchors once more, explain the hardware we're using for each.
+
+Talk about how distance is determined via time of flight by calculating speed of light and delay.
+
+Table of requirements (low power, good range, work indoors).
+
+\section{Math}
+Go over time of flight.
+
+\section{Bluetooth - A Failed Approach}
+Talk about how originally we planned on doing this via Bluetooth, but Android did not provide tight enough guarantees. This motivated the use of Arduino and specialty chips. The DWM1000 is, of course, fantastic at it.
+
+\section{Ultrawideband}
+A bit on this would be good! Go into the DWM1000's features.
+
+\section{Design of the Hardware}
+Go into PCB design, talk about difficulties and options of trying to condense the size of the tag down. Show off anchor breadboard design. Talk briefly about FTDI.
+
+\section{Arduino Software}
+Go into our open source library to help with the use of the DWM by thotro. Talk about the protocol we made.
+
+\section{DWM1000 Bugs}
+Go into specific issues with calibrating antennae delay, with sending delayed transmissions, etc.
+
+\section{Results}
+Go into how accurate rangefinding is, operating frequency, etc. Have tables!
+
+\section{Conclusion}
+Talk about how we now have a subsystem which can fully handle calculating ranges between things.

@@ -1,0 +1,41 @@
+% Augmented Reality
+
+\chapter{Augmented Reality} % Main chapter title
+
+\label{AugmentedReality}
+
+%----------------------------------------------------------------------------------------
+
+\section{Overview}
+Talk about the goal of this section: to take positions from the position calculation subsystem, then render them on the screen to show where things are (even behind walls, etc.)
+
+Make sure to note that we'll have youtube videos up and give links.
+
+Don't forget an appendix with major code.
+
+\section{Tech Used}
+Go over OpenGL, the 3D text rendering library we're using, Android's rotation calculations.
+
+\section{3D Math Overview}
+Touch on matrices, projection/view/model matrices. Talk about how we use OpenGL's implementation to place things in 3D space.
+
+\section{Camera Field of View and OpenGL Field of View}
+Talk about how we make positions accurate here. Go over how we just overlay the camera and OpenGL surface on each other. Discuss Android camera limitations/FPS results.
+
+\section{Cellphone Rotation}
+Discuss in detail more about how Android implements getting the rotation, the limits of it when moving + in strong magnetic fields.
+
+\section{Billboard Effect}
+Talk about how doing the inverted view matrix multiplication causes things to always face the screen. Give pictures! Motivation here is to make 2D images that we can place in 3D space and have them face the screen.
+
+\section{HUD}
+Go over how the HUD is made. (Still need to finish that too so we can get pictures.)
+
+\section{Calibration}
+Talk about how we can take the cellphone's rotation matrix and calibrate the positions we calculate from anchors/tags.
+
+\section{Results}
+Show off how accurate we are. Have Youtube videos displaying such.
+
+\section{Conclusion}
+Conclusion of this section: we can render positions on the screen and have 3D math to do so etc.
