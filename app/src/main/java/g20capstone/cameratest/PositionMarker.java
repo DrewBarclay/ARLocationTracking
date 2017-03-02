@@ -102,7 +102,8 @@ public class PositionMarker {
             "  gl_FragColor = texture2D(u_Texture, v_TexCoordinate);" +
             "}";
 
-    private int mTextureDataHandle;
+    private int mTextureOnScreenDataHandle;
+    private int mTextureOffScreenDataHandle;
 
     private final FloatBuffer mVertexBuffer;
     private final FloatBuffer mColorBuffer;
@@ -115,7 +116,7 @@ public class PositionMarker {
     private int mTextureUniformHandle;
     private final int mTextureCoordinateHandle;
 
-    public PositionMarker(int textureHandle) {
+    public PositionMarker(int textureOnScreenHandle, int textureOffScreenHandle) {
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(VERTICES.length * 4);
 
         byteBuffer.order(ByteOrder.nativeOrder());
@@ -151,15 +152,16 @@ public class PositionMarker {
         mTextureUniformHandle = GLES20.glGetUniformLocation(mProgram, "u_Texture");
         mTextureCoordinateHandle = GLES20.glGetAttribLocation(mProgram, "a_TexCoordinate");
 
-        mTextureDataHandle = textureHandle;
+        mTextureOnScreenDataHandle = textureOnScreenHandle;
+        mTextureOffScreenDataHandle = textureOffScreenHandle;
     }
 
-    public void drawAtPosition(float[] vpMatrix, float[] invertedViewMatrix, float x, float y, float z) {
+    public float[] onScreenModelMatrix(float[] invertedViewMatrix, float x, float y, float z) {
         //Start by calculating inverted view matrix to reverse-rotate the object so that, when rotated, it faces the camera
         //Also translate the object appropriately.
         float[] translationMatrix = new float[16];
         float[] modelMatrix = new float[16];
-        float[] mvpMatrix = new float[16];
+
 
         Matrix.setIdentityM(translationMatrix, 0);
         Matrix.translateM(translationMatrix, 0, x, y, z);
@@ -167,6 +169,71 @@ public class PositionMarker {
         float angle = (float)((double)System.nanoTime() / 1e9 * 360) % 360; //1Hz rotation
         Matrix.multiplyMM(modelMatrix, 0, translationMatrix, 0, invertedViewMatrix, 0);
         Matrix.rotateM(modelMatrix, 0, angle, 0, 0, 1f); //This is applied first; rotate around z axis over time at 1Hz
+
+        return modelMatrix;
+    }
+
+    //x and y are in NDC
+    public float[] offScreenModelMatrix(float[] vpMatrix, float[] invertedVPMatrix, float[] invertedViewMatrix, float x, float y) {
+        //Find border position
+        //Find where [x, y] intersects with the NDC box (ignore Z component).  Whichever component is larger dictates this.
+        //If we divide by the absolute value of the larger component, we will make our vector land right on the edge of the NCD box
+        //(which is to say one of x and y will be = 1).
+        float divisor = Math.max(Math.abs(x), Math.abs(y));
+        //TODO proper z value that is not -0.98
+        float[] edgeVector = {x/divisor, y/divisor, 0.25f, 1}; //homogenous component set to 1
+
+        //Rotate based on vector in NDC, then rotate on inverted view matrix so it faces the camera
+        float[] rotateToFaceEdgeMatrix = new float[16];
+        Matrix.setIdentityM(rotateToFaceEdgeMatrix, 0);
+        float angle = (float)Math.atan2(edgeVector[1], edgeVector[0]);
+        Matrix.rotateM(rotateToFaceEdgeMatrix, 0, angle*180f/(float)Math.PI, 0, 0, 1f);
+        Matrix.translateM(rotateToFaceEdgeMatrix, 0, -0.5f, 0, 0); //correct so the right edge is on the right border
+
+        //Face camera...
+        float[] rotationMatrix = new float[16];
+        Matrix.multiplyMM(rotationMatrix, 0, invertedViewMatrix, 0, rotateToFaceEdgeMatrix, 0);
+
+        //Convert from NDC to world coordinates via inverted VP matrix, translate matrix to that
+        float[] worldCoords = new float[4];
+        Matrix.multiplyMV(worldCoords, 0, invertedVPMatrix, 0, edgeVector, 0);
+        Math3D.fixHomogenous(worldCoords); //w may be non-1
+
+        float[] translationMatrix = new float[16];
+        Matrix.setIdentityM(translationMatrix, 0);
+        Matrix.translateM(translationMatrix, 0, worldCoords[0], worldCoords[1], worldCoords[2]);
+
+        float[] modelMatrix = new float[16];
+        Matrix.multiplyMM(modelMatrix, 0, translationMatrix, 0, rotationMatrix, 0);
+
+        return modelMatrix;
+    }
+
+    public void drawAtPosition(float[] vpMatrix, float[] invertedVPMatrix, float[] invertedViewMatrix, float x, float y, float z) {
+        //Start by determining whether or not this is on the screen
+        float[] p = {x, y, z, 1}; //w=1 by default
+        float[] pNDC = new float[4];
+        Matrix.multiplyMV(pNDC, 0, vpMatrix, 0, p, 0);
+
+        boolean onScreen = true;
+        for (int i = 0; i < 3; i++) {
+            if (pNDC[i] <= -pNDC[3] || pNDC[i] >= pNDC[3]) { //if v outside the bounds -w <= x_i <= w
+                onScreen = false; //is clipped
+            }
+        }
+
+        //Based on whether this is on the screen or not, we will create different model matrices and choose different textures
+        float[] modelMatrix;
+        int textureHandle;
+        if (onScreen) {
+            modelMatrix = onScreenModelMatrix(invertedViewMatrix, x, y, z);
+            textureHandle = mTextureOnScreenDataHandle;
+        } else {
+            modelMatrix = offScreenModelMatrix(vpMatrix, invertedVPMatrix, invertedViewMatrix, pNDC[0], pNDC[1]);
+            textureHandle = mTextureOffScreenDataHandle;
+        }
+
+        float[] mvpMatrix = new float[16];
         Matrix.multiplyMM(mvpMatrix, 0, vpMatrix, 0, modelMatrix, 0);
 
         //Now do the actual drawing with the MVP matrix
@@ -198,7 +265,7 @@ public class PositionMarker {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
 
         // Bind the texture to this unit.
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureDataHandle);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle);
 
         // Tell the texture uniform sampler to use this texture in the shader by binding to texture unit 0.
         GLES20.glUniform1i(mTextureUniformHandle, 0);
