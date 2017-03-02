@@ -1,12 +1,16 @@
 package g20capstone.cameratest;
 
+import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 import android.view.Display;
@@ -25,7 +29,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 
 public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
-    private Context mContext;
+    private Activity mContext;
     private GLText mGlText;
     private TagParser mTagParser;
 
@@ -48,7 +52,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mRotationSensor;
 
-    public ARRenderer(Context context, SensorManager sensorManager, Display display, TagParser tagParser) {
+    public ARRenderer(Activity context, SensorManager sensorManager, Display display, TagParser tagParser) {
         mContext = context;
         mDisplay = display;
         mSensorManager = sensorManager;
@@ -73,7 +77,8 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         mGlText = new GLText(null, mContext.getAssets()); //based on https://github.com/d3alek/Texample2/blob/master/Texample23D/src/com/android/texample2/GLText.java
         mGlText.load("OpenSans-Regular.ttf", 40, 2, 2);
 
-        mPositionMarker = new PositionMarker();
+        int textureHandle = loadTexture(mContext, mContext.getResources().getIdentifier("tricolor_circle", "drawable", mContext.getPackageName()));
+        mPositionMarker = new PositionMarker(textureHandle);
     }
 
     @Override
@@ -121,6 +126,43 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         GLES20.glCompileShader(shader);
 
         return shader;
+    }
+
+    //Code copied from http://www.learnopengles.com/android-lesson-four-introducing-basic-texturing/
+    public static int loadTexture(final Context context, final int resourceId)
+    {
+        final int[] textureHandle = new int[1];
+
+        GLES20.glGenTextures(1, textureHandle, 0);
+
+        if (textureHandle[0] != 0)
+        {
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inScaled = false;   // No pre-scaling
+
+            // Read in the resource
+            final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId, options);
+
+            // Bind to the texture in OpenGL
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
+
+            // Set filtering
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+
+            // Load the bitmap into the bound texture.
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+            // Recycle the bitmap, since its data has been loaded into OpenGL.
+            bitmap.recycle();
+        }
+
+        if (textureHandle[0] == 0)
+        {
+            throw new RuntimeException("Error loading texture.");
+        }
+
+        return textureHandle[0];
     }
 
     //Copied from Google's sample code
