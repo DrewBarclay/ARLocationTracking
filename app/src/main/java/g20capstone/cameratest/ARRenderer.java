@@ -36,9 +36,11 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private Display mDisplay;
 
     private PositionMarker mPositionMarker;
+    private OutOfBoundsPositionMarker mOutOfBoundsPositionMarker;
 
     // mMVPMatrix is an abbreviation for "Model View Projection Matrix"
     private final float[] mVPMatrix = new float[16];
+    private final float[] mInvertedVPMatrix = new float[16];
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
     private final float[] mInvertedViewMatrix = new float[16];
@@ -79,6 +81,8 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
         int textureHandle = loadTexture(mContext, mContext.getResources().getIdentifier("tricolor_circle", "drawable", mContext.getPackageName()));
         mPositionMarker = new PositionMarker(textureHandle);
+        textureHandle = loadTexture(mContext, mContext.getResources().getIdentifier("arrow", "drawable", mContext.getPackageName()));
+        mOutOfBoundsPositionMarker = new OutOfBoundsPositionMarker(textureHandle);
     }
 
     @Override
@@ -106,13 +110,27 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         Matrix.multiplyMM(mVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
         Matrix.invertM(mInvertedViewMatrix, 0, mViewMatrix, 0);
-
-        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedViewMatrix, -5, -5, -5);
+        Matrix.invertM(mInvertedVPMatrix, 0, mVPMatrix, 0);
 
         mGlText.begin(mVPMatrix);
         mGlText.setScale(0.05f);
         mGlText.draw("Test String :)", -5, -5, -5, mInvertedViewMatrix);
         mGlText.end();
+
+        float[] p = {-5f, -5f, -5f, 1};
+        float[] pScreen = new float[4];
+        Matrix.multiplyMV(pScreen, 0, mVPMatrix, 0, p, 0);
+        boolean onScreen = true;
+        for (int i = 0; i < 3; i++) {
+            if (pScreen[i] <= -pScreen[3] || pScreen[i] >= pScreen[3]) { //if v outside the bounds -w <= x_i <= w
+                onScreen = false; //is clipped
+            }
+        }
+        if (onScreen) {
+            mPositionMarker.drawAtPosition(mVPMatrix, mInvertedViewMatrix, -5, -5, -5);
+        } else {
+            mOutOfBoundsPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, pScreen[0]/pScreen[3], pScreen[1]/pScreen[3]);
+        }
     }
 
     //Code copied from Google's sample code.
