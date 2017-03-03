@@ -20,6 +20,8 @@ import android.opengl.Matrix;
 import com.android.texample2.programs.BatchTextProgram;
 import com.android.texample2.programs.Program;
 
+import java.util.Arrays;
+
 public class GLText {
 
 	//--Constants--//
@@ -337,9 +339,29 @@ public class GLText {
 		draw( text, x - ( len / 2.0f ), y - ( getCharHeight() / 2.0f ), z, angleDegX, angleDegY, angleDegZ );  // Draw Text Centered
 		return len;                                     // Return Length
 	}
+
+    //Note this was altered to work properly with the rotation matrix by Drew Barclay. The other drawC methods will still fail badly for arbitrary rotations; only this works.
     public float drawC(String text, float x, float y, float z, float[] rotationMatrix)  {
-        float len = getLength( text );                  // Get Text Length
-        draw( text, x - ( len / 2.0f ), y - ( getCharHeight() / 2.0f ), z, rotationMatrix);  // Draw Text Centered
+        float chrHeight = cellHeight * scaleY;          // Calculate Scaled Character Height
+        float chrWidth = cellWidth * scaleX;            // Calculate Scaled Character Width
+        float len = getLength(text);                  // Get Text Length
+        float deltaX = -(len  / 2.0f);
+        float deltaY = -(getCharHeight() / 2.0f);
+        float deltaXPad = deltaX + ( ( chrWidth / 2.0f ) - ( fontPadX * scaleX ) );
+        float deltaYPad = deltaY + ( ( chrHeight / 2.0f ) - ( fontPadY * scaleY ) );
+
+        //Rotation should be around the center, so before rotating we want to translate halfway down then return.
+        float[] translationMatrixReturn = new float[16];
+        Matrix.setIdentityM(translationMatrixReturn, 0);
+        Matrix.translateM(translationMatrixReturn, 0, -deltaXPad, -deltaYPad, 0);
+
+        float[] rotationTempMatrix = Arrays.copyOf(rotationMatrix, rotationMatrix.length);
+        Matrix.translateM(rotationTempMatrix, 0, deltaXPad, deltaYPad, 0);
+
+        float[] rotationMatrixC = new float[16];
+        Matrix.multiplyMM(rotationMatrixC, 0, translationMatrixReturn, 0, rotationTempMatrix, 0);
+
+        draw(text, x + deltaX, y + deltaY, z, rotationMatrixC);  // Draw Text Centered
         return len;                                     // Return Length
     }
 	public float drawC(String text, float x, float y, float z, float angleDegZ) {

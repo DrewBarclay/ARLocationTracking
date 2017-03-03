@@ -24,6 +24,8 @@ package g20capstone.cameratest;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 
+import com.android.texample2.GLText;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -64,10 +66,8 @@ public class PositionMarker {
             1, 2, 3 //triangle, ccw, top right of it
     };
 
-    /** Number of coordinates per vertex in {@link VERTICES}. */
     private static final int COORDS_PER_VERTEX = 3;
 
-    /** Number of values per colors in {@link COLORS}. */
     private static final int VALUES_PER_COLOR = 4;
 
     /** Vertex size in bytes. */
@@ -116,7 +116,9 @@ public class PositionMarker {
     private int mTextureUniformHandle;
     private final int mTextureCoordinateHandle;
 
-    public PositionMarker(int textureOnScreenHandle, int textureOffScreenHandle) {
+    private GLText mGLText;
+
+    public PositionMarker(int textureOnScreenHandle, int textureOffScreenHandle, GLText glText) {
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(VERTICES.length * 4);
 
         byteBuffer.order(ByteOrder.nativeOrder());
@@ -154,6 +156,8 @@ public class PositionMarker {
 
         mTextureOnScreenDataHandle = textureOnScreenHandle;
         mTextureOffScreenDataHandle = textureOffScreenHandle;
+
+        mGLText = glText;
     }
 
     public float[] onScreenModelMatrix(float[] invertedViewMatrix, float x, float y, float z) {
@@ -181,7 +185,7 @@ public class PositionMarker {
         //(which is to say one of x and y will be = 1).
         float divisor = Math.max(Math.abs(x), Math.abs(y));
         //TODO proper z value that is not -0.98
-        float[] edgeVector = {x/divisor, y/divisor, 0.25f, 1}; //homogenous component set to 1
+        float[] edgeVector = {x/divisor, y/divisor, 0.6f, 1}; //homogenous component set to 1
 
         //Rotate based on vector in NDC, then rotate on inverted view matrix so it faces the camera
         float[] rotateToFaceEdgeMatrix = new float[16];
@@ -209,7 +213,7 @@ public class PositionMarker {
         return modelMatrix;
     }
 
-    public void drawAtPosition(float[] vpMatrix, float[] invertedVPMatrix, float[] invertedViewMatrix, float x, float y, float z) {
+    public void drawAtPosition(float[] vpMatrix, float[] invertedVPMatrix, float[] invertedViewMatrix, float x, float y, float z, String text) {
         //Start by determining whether or not this is on the screen
         float[] p = {x, y, z, 1}; //w=1 by default
         float[] pNDC = new float[4];
@@ -277,5 +281,13 @@ public class PositionMarker {
         // Disable vertex arrays.
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(mColorHandle);
+
+        if (onScreen) {
+            //Draw text
+            mGLText.begin(vpMatrix);
+            mGLText.setScale(0.02f);
+            mGLText.drawC(text, x, y, z, invertedViewMatrix);
+            mGLText.end();
+        }
     }
 }

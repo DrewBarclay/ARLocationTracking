@@ -80,7 +80,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
         int textureOnScreenHandle = loadTexture(mContext, mContext.getResources().getIdentifier("tricolor_circle", "drawable", mContext.getPackageName()));
         int textureOffScreenHandle = loadTexture(mContext, mContext.getResources().getIdentifier("arrow", "drawable", mContext.getPackageName()));
-        mPositionMarker = new PositionMarker(textureOnScreenHandle, textureOffScreenHandle);
+        mPositionMarker = new PositionMarker(textureOnScreenHandle, textureOffScreenHandle, mGlText);
     }
 
     @Override
@@ -110,12 +110,9 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         Matrix.invertM(mInvertedViewMatrix, 0, mViewMatrix, 0);
         Matrix.invertM(mInvertedVPMatrix, 0, mVPMatrix, 0);
 
-        mGlText.begin(mVPMatrix);
-        mGlText.setScale(0.05f);
-        mGlText.draw("Test String :)", -5, -5, -5, mInvertedViewMatrix);
-        mGlText.end();
-
-        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, -5, -5, -5);
+        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, -5, -5, -5, "Tag 1");
+        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5, 5, 5, "Tag 2");
+        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5, 5, 0, "Tag 3");
     }
 
     //Code copied from Google's sample code.
