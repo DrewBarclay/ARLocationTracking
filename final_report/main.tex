@@ -47,6 +47,8 @@ headsepline, % Uncomment to get a line under the header
 
 \usepackage{listings} %for code highlighting
 
+\usepackage{amsmath}
+
 \usepackage[backend=bibtex,style=authoryear,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
 
 \addbibresource{example.bib} % The filename of the bibliography
@@ -72,7 +74,7 @@ headsepline, % Uncomment to get a line under the header
 %----------------------------------------------------------------------------------------
 
 \thesistitle{Augmented Reality with Location Tracking} % Your thesis title, this is used in the title and abstract, print it elsewhere with \ttitle
-\supervisor{Dr. Robert MacLeod \\ Dr. Ekram Hossain} % Your supervisor's name, this is used in the title page, print it elsewhere with \supname
+\supervisor{Dr. Robert McLeod \\ Dr. Ekram Hossain} % Your supervisor's name, this is used in the title page, print it elsewhere with \supname
 \examiner{} % Your examiner's name, this is not currently used anywhere in the template, print it elsewhere with \examname
 \degree{Bachelor of Science} % Your degree name, this is used in the title page and abstract, print it elsewhere with \degreename
 \author{Drew Barclay \\ Maricar Aliasut \\ Llandro Ojeda} % Your name, this is used in the title page and abstract, print it elsewhere with \authorname
@@ -215,6 +217,8 @@ headsepline, % Uncomment to get a line under the header
 \begin{acknowledgements}
 \addchaptertocentry{\acknowledgementname} % Add the acknowledgements to the table of contents
 The acknowledgments and the people to thank go here, don't forget to include your project advisor\ldots
+
+Include a list here of everyone who's open source stuff we used, and eg. the guy who did the ranging proof on those forums?
 \end{acknowledgements}
 
 \begin{contributions}
@@ -241,8 +245,8 @@ report.
 
 \begin{abbreviations}{ll} % Include a list of abbreviations (a table of two columns)
 
-\textbf{LAH} & \textbf{L}ist \textbf{A}bbreviations \textbf{H}ere\\
-\textbf{WSF} & \textbf{W}hat (it) \textbf{S}tands \textbf{F}or\\
+\textbf{PCB} & Printed circuit board. \\
+\textbf{UWB} & Ultra-wideband. A type of radio technology. \\
 
 \end{abbreviations}
 
@@ -279,7 +283,7 @@ $\omega$ & angular frequency & \si{\radian} \\
 %	DEDICATION
 %----------------------------------------------------------------------------------------
 
-\dedicatory{For/Dedicated to/To my\ldots} 
+%\dedicatory{For/Dedicated to/To my\ldots} 
 
 %----------------------------------------------------------------------------------------
 %	THESIS CONTENT - CHAPTERS
