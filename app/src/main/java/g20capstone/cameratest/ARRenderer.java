@@ -110,9 +110,19 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         Matrix.invertM(mInvertedViewMatrix, 0, mViewMatrix, 0);
         Matrix.invertM(mInvertedVPMatrix, 0, mVPMatrix, 0);
 
-        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, -5, -5, -5, "Tag 1");
-        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5, 5, 5, "Tag 2");
-        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5, 5, 0, "Tag 3");
+        //Draw cubes on positions grabbed
+        Map<Integer, Point3D> positions = mTagParser.getPositions();
+        if (positions != null) {
+            Point3D ourPos = positions.get(5);
+            if (ourPos != null) {
+                for (Map.Entry<Integer, Point3D> e : positions.entrySet()) {
+                    if (e.getKey() != 5) {
+                        Point3D pos = e.getValue();
+                        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5f * (float) (pos.x - ourPos.x), 5f * (float) (pos.y - ourPos.y), 5f * (float) (pos.z - ourPos.z), "Tag " + e.getKey());
+                    }
+                }
+            }
+        }
     }
 
     //Code copied from Google's sample code.
