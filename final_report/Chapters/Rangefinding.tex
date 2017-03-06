@@ -52,13 +52,21 @@ This section briefly covers the math behind time-of-flight range calculations. F
 In the case where there are two nodes communicating with each other, one can calculate the time it takes a signal to propagate between them, $t_p$, as:
 
 \[
-t_p = \frac{t_{round} - t_{process}}{2}
+	t_p = \frac{t_{round} - t_{process}}{2}
 \]
 
 A diagram displaying this can be found in !!INSERT HERE!!.
 
 \subsection{Asymmetric Two-Way Ranging}
-Insert a proof here since the DWM user manual does not have it. Actually, put it in an Appendix.
+Because the clocks of two nodes may not pass time at the same rate, the above equation will not be as accurate as possible. The DWM1000 User Guide presents, without proof, the following equation for more accurate rangefinding:
+
+\[
+	t_p = \frac{round_1  round_2 - reply_1 reply_2}{ round_1 + round_2 + reply_1 + reply_2}
+\]
+
+$round_1$, $round_2$, $reply_1$, $reply_2$ are respectively the total times taken (EXPLAIN BETTER HERE). See (INSERT FIGURE HERE).
+ 
+A possible proof of this equation can be found in (INSERT APPENDIX THING HERE).
 
 \section{Wireless Communications}
 At the start of the project, it was determined that a technology would need to be chosen to handle wireless communications for ranging purposes. A number of options were considered. The ideal technology would:
@@ -106,9 +114,17 @@ To interface with the DWM1000, a microcontroller was needed. The Arduino Pro Min
 The only real downside of the Pro Mini was that it required a lot of soldering. 
 
 \subsection{The PCB}
-Go into PCB design, talk about difficulties and options of trying to condense the size of the tag down. Show off anchor breadboard design. Talk briefly about FTDI.
+Several designs were considered for the PCB connecting the Arduino and DWM1000. The most important factor was size. A PCB was constructed only for the tags, and anchors - which did not need to be reduced in size - were left in breadboard form in order to save costs and time. Making alterations to the PCB design to allow for a barrel jack power adapter (the only distinguishing feature between tags and anchors) would, however, have been extremely simple.
+
+The first design idea we tried was to place the Arduino and DWM on top of each other, resulting in the smallest possible size. See (INSERT FIGURE HERE). However, the physical dimensions of the two components made this impossible. The other possibility was to place each component on opposite sides of the PCB (INSERT FIGURE HERE), but the Arduino's design demanded breakout headers to solder it into the board, which meant the PCB had to have holes drilled. This essentially ran into the same problem as with the original.
+
+The second idea was to make two PCBs. The Arduino would connect to a PCB above it, and that PCB would connect to a board above it with the DWM1000 it. Because it was layered, the pins connecting the layers could be arranged such that the Arduino and DWM1000 were essentially above each other (but without interfering with their pins, as before). See (INSERT FIGURE). In the end, this design was abandoned because the breakout pins would add to much vertical length, it was expensive, and because it was much more complex to design.
+
+As such, the end design required the Arduino and DWM1000 to be spread out over the board, resulting in the PCB being quite long and narrow. The PCB design was done in Eagle and ordered from PCBWay. The result can be seen in (INSERT FIGURE).
 
 \section{Arduino Software}
+
+
 Go into our open source library to help with the use of the DWM by thotro. Talk about the protocol we made.
 
 \section{DWM1000 Bugs}
