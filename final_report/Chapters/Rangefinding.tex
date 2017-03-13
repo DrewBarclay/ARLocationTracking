@@ -80,7 +80,14 @@ At the start of the project, it was determined that a technology would need to b
 \subsection{Bluetooth in Phones: A Failed Approach}
 Originally, the goal was to use Bluetooth for ranging. The reason for this was that Android cellphones, which usually have Bluetooth transceivers, could be used for tags and anchors. This would save a large amount of time, as cellphones include batteries, are easy to program, and almost everyone has one (which would make letting people use our project as easy as downloading an app). We would just need to put a few phones running our app around a room, and we'd get ranging.
 
-Unfortunately, it became clear early on that Bluetooth - specifically, Bluetooth used on Android cellphones - was not suitable. The time it took to send a Bluetooth message itself through the Android OS suffered massive variance of milliseconds (ADD IN APPENDIX CITATION WITH OUR CODE?), which would lead to 300 km of error in calculated distances! Android does not have any guarantees on timing, and does not allow low-level programming access to its internals (even when rooted). As such, we abandoned the idea of using phones as nodes.
+Unfortunately, it became clear early on that Bluetooth - specifically, Bluetooth used on Android cellphones - was not suitable. There were two ways to use Bluetooth for ranging: 
+
+\begin{itemize}
+	\item RSSI (received signal strength indicator), which is essentially a measure of how strong a received signal is. Because signal power drops off with the square of distance, RSSI can be used to determine distance from a cellphone. Indeed, there this is a cellphone app to do just that on the Google Play Store. Measurements showed that this was method had very low range, was very noisy (power levels varied wildly), and had a large latency between measurements. As well, RSSI values are not standard among cellphones, requiring many calibrations for each model of phone used. Due to these factors, it was determined that using RSSI for distance measurements was not well suited for the fine-grained location tracking this project sought. 
+	\item Time-of-flight measurements. Experiments showed that the time it took to send a Bluetooth message itself through the Android OS suffered massive variance of milliseconds (ADD IN APPENDIX CITATION WITH OUR CODE?), which would lead to 300 km of error in calculated distances! Android does not have any guarantees on timing, and does not allow low-level programming access to its internals. This method was proven unworkable.
+\end{itemize}
+
+With all the avenues to use Bluetooth exhausted, the idea of using phones and their Bluetooth transceivers was rejected.
 
 \subsection{Ultra-wideband and the DWM1000}
 After doing some research, we discovered the Decawave DWM1000 ultra-wideband transceiver. This chip is advertised as specifically being suited for ranging applications. It uses ultra-wideband technology rather than Bluetooth, Wi-Fi, or similar technologies.
@@ -94,6 +101,8 @@ The DWM1000 is advertised as:
 	\item Having a data rate of up to 6.8Mb/s.
 	\item Having a small physical size. 
 \end{itemize}
+
+As well, there was an already an open source library written to use it with an Arduino, which would allow us to quickly prototype with the chip and ensure it would fit for our application.
 
 Because these qualities satisfied our requirements, the DWM1000 was chosen for the foundational technology of the ranging part of the project. 
 
@@ -123,12 +132,63 @@ The second idea was to make two PCBs. The Arduino would connect to a PCB above i
 As such, the end design required the Arduino and DWM1000 to be spread out over the board, resulting in the PCB being quite long and narrow. The PCB design was done in Eagle and ordered from PCBWay. The result can be seen in (INSERT FIGURE).
 
 \section{Arduino Software}
+The software to control the DWM1000 was written in C++ in Arduino IDE. The basic code to control the DWM1000 (handling memory address constants, communication with it via SPI, and a few high-level functions like send/receive) was freely available in Thomas ``thotro'' Trojer's \texttt{arduino-dw1000} library. The library served as the foundation of our code to network the devices.
 
+\subsection{Networking Basics}
+Each node in the network broadcasts on a set schedule (MODIFY THIS LATER AFTER TIME SHARE SYSTEM IMPLEMENTED). It transmits a timestamp of when it sent the message, a list of the timestamps when it last received a communication from every other node in the network, and a list of the last computed ranges to the other nodes. Similarly, every other node in the network will receive this information and use it to compute a new range to the node in question. Thus, every node in the network will receive complete range information for the whole network.
 
-Go into our open source library to help with the use of the DWM by thotro. Talk about the protocol we made.
+The DWM uses 40 bits (5 bytes) for its timestamps. The Arduino internally represents these as 64-bit integers (the last byte being meaninless), but transmits them as 40 bit (5 byte) numbers.
 
-\section{DWM1000 Bugs}
-Go into specific issues with calibrating antennae delay, with sending delayed transmissions, etc.
+Every node in the network has a pre-determined ID, which is set when it the code is programmed onto the device. A single byte is used for this ID to save as much space as possible, though the code could easily be modified to support longer IDs if the devices were to be mass produced. Alternately, something like DHCP could be implemented. As there are only 7 devices currently operational, our project only uses IDs 1 through 7.
+
+Communications between the Arduino and the DWM1000 are handled through SPI. When the DWM1000 receives a message, it triggers an interrupt on the Arduino, which can then obtain the data through SPI. TO DO REWRITE THIS A BIT MAYBE.
+
+\subsection{Range Information Protocol}
+The protocol for a transmission from a node is as follows:
+
+\begin{itemize}
+	\item 1 byte for the ID of the transmitting node.
+	\item 5 bytes for the timestamp of the sending of the message.
+	\item For each device the transmitting node has knowledge of:
+	\begin{itemize}
+		\item 1 byte for the ID of the device
+		\item 1 byte for the shared counter (used to detect lost transmissions)
+		\item 5 bytes for timestamp of last received message from the device
+		\item 4 bytes for last calculated range	
+	\end{itemize} 
+\end{itemize}
+
+Parsing a received message and updating information from it is very simple. For the code in question, look at (INSERT APPENDIX HERE).
+
+TALK ABOUT ROLLING TIMESTAMPS TO-DO!
+
+\subsection{Calculating a Delay}
+As part of the time of flight calculation, a timestamp is needed for when the message was received and for when the reply was sent. The DWM1000 does not offer a way to automatically set the time upon transmission, but does offer the ability to set a time when a message will be transmitted in the future. This timestamp can then be embedded in the message itself.
+
+Ideally, this delay is short. However, if the delay is too short, the Arduino will not be able to transmit the data the DWM1000 should send before the timestamp is passed. This causes a silent error, and the DWM will not transmit anything. As well, the delay specified is not the delay at which the DWM1000 will begin transmitting, it is the delay that the DWM1000 will begin transmitting the data itself. There is a ``premable'' sent before any transmission to allow the other devices in the network time to wake up and begin sniffing the air and know a message is coming. This time to send the preamble lasts quite a long time (approximately 1 microsecond per symbol in the problem (ADD CITATION HERE), which adds up to almost 2 ms). This was the most difficult to solve bug that was encountered in the design of the system.
+
+In the code, the minimum delay before we can transmit is the sum of the:
+\begin{itemize}
+	\item Number of symbols in the preamble $\times$ 1\si{\micro\second} (UPDATE THIS FOR THE FINAL VERSION WITH THE LENGTH OF THE PRAMBLE)
+	\item Time required to calculate and send the timestamp using SPI, about 1000\si{\micro\second} (empirically determined)
+	\item Bytes of data to transmit $\times$ 4.5\si{\micro\second}, or 85 $\times$ number of devices in the network besides this one (empirically determined)
+	\item A fudge factor just in case of about 200\si{\micro\second}
+\end{itemize}
+
+It is important to minimize this delay so to increase the maximum frequency the system can update ranges at.
+
+\subsection{Communications Timing}
+Go into the timeshare system when it is done. 
+
+\section{System Operating Frequency}
+Go into the math of how many updates per second can make, talk about how more devices on the network reduces this.
+
+\section{Calibrating}
+DWM1000s need to be calibrated to give correct distances due to the differences in hardware. There are a number of factors affecting the DWM1000, such as temperature. Some of these factors are controlled for in software in the arduino-dw1000 library. For a detailed overview of the possible errors and how to correct for them, consult the INCLUDE SOURCE HERE IT WAS A PDF ON THE SITE I READ.
+
+The primary factor which could not be controlled for by Decawave is the antenna delay. The capacitance of the hardware the DWM1000 is hooked up to can cause nanosecond-level delays in transmission (in experiments, it was found that this could cause up to several meters of error incorrectly configured). This is a constant, and is determined empirically. The antenna delay for the tags is the same and was found to be INSERT NUMBER HERE THAT WE FOUND, and the antenna delay for the anchors is roughly the same and was found to be INSERT NUMBER HERE.
+
+These constants required a slight tweak to the DWM1000 library. INSERT LINK TO SOURCE CODE OF OUR CHANGED VERSION HERE.
 
 \section{Results}
 Go into how accurate rangefinding is, operating frequency, etc. Have tables!
