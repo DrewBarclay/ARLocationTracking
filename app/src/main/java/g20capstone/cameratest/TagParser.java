@@ -16,6 +16,7 @@ import java.util.TreeSet;
 public class TagParser {
     public HashMap<Pair<Integer, Integer>, Float> ranges = new HashMap<>();
     private String data = "";
+    public int ourId = 0;
 
     public void addString(String newData) {
         data += newData;
@@ -44,6 +45,16 @@ public class TagParser {
     }
 
     public HashMap<Integer, Point3D> getPositions() {
+        //Debug code:
+        if (true) {
+            HashMap<Integer, Point3D> debugPos = new HashMap<>();
+            debugPos.put(0, new Point3D(0, 0, 0));
+            debugPos.put(1, new Point3D(5, 5, 0));
+            debugPos.put(2, new Point3D(-5, -5, 0));
+            debugPos.put(3, new Point3D(5, 5, 5));
+            return debugPos;
+        }
+
         //Start by making the adjacency matrix
 
         //Begin by turning ids into integers from 0-size

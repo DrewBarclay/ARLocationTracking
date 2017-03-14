@@ -3,6 +3,7 @@ package g20capstone.cameratest;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
@@ -14,11 +15,14 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -158,6 +162,33 @@ public class MainActivity extends AppCompatActivity {
         int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_FULLSCREEN;
         decorView.setSystemUiVisibility(uiOptions);
+
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        int action = MotionEventCompat.getActionMasked(event);
+
+        switch(action) {
+            case (MotionEvent.ACTION_DOWN):
+                if (mARRenderer != null) {
+                    if (mARRenderer.isCalibrating()) {
+                        //We're done calibrating now
+                        //The resulting calibration matrix is equal to the calibration matrix in play * the inverted raw rotation matrix
+                        float[] invertedRotationMatrixRaw = new float[16];
+                        Matrix.invertM(invertedRotationMatrixRaw, 0, mARRenderer.getRotationMatrixRaw(), 0);
+                        Matrix.multiplyMM(mARRenderer.getRotationCalibrationMatrix(), 0, mARRenderer.getInvertedViewMatrix(), 0, invertedRotationMatrixRaw, 0);
+                        mARRenderer.setCalibrating(false);
+                    } else {
+                        Matrix.setIdentityM(mARRenderer.getRotationCalibrationMatrix(), 0);
+                        mARRenderer.setCalibrating(true);
+                    }
+                }
+                return true;
+            default:
+                return super.onTouchEvent(event);
+        }
     }
 
     protected void setupCamera() {

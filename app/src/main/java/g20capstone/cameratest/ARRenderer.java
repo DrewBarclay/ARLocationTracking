@@ -44,6 +44,8 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private final float[] mViewMatrix = new float[16];
     private final float[] mInvertedViewMatrix = new float[16];
 
+    private final float[] mRotationMatrixRaw = new float[16];
+    private final float[] mRotationCalibrationMatrix = new float[16];
     private final float[] mRotationMatrix = new float[16];
     private final float[] mLookAtVector = new float[4];
     private final float[] mLookAtVector0 = new float[] {0, 0, -1, 1};
@@ -53,12 +55,15 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mRotationSensor;
 
+    private boolean mCalibrating = false;
+
     public ARRenderer(Activity context, SensorManager sensorManager, Display display, TagParser tagParser) {
         mContext = context;
         mDisplay = display;
         mSensorManager = sensorManager;
         mRotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mTagParser = tagParser;
+        Matrix.setIdentityM(mRotationCalibrationMatrix, 0);
     }
 
     public void onResume() {
@@ -95,14 +100,29 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        Map<Integer, Point3D> positions = mTagParser.getPositions();
+        Point3D ourPos = positions.get(mTagParser.ourId);
+
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+        //Start by doing the rotation matrix...
+        Matrix.multiplyMM(mRotationMatrix, 0, mRotationCalibrationMatrix, 0, mRotationMatrixRaw, 0);
 
         Matrix.multiplyMV(mLookAtVector, 0, mRotationMatrix, 0, mLookAtVector0, 0);
         Matrix.multiplyMV(mUpVector, 0, mRotationMatrix, 0, mUpVector0, 0);
 
         // Set the camera position (View matrix)
-        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, mLookAtVector[0], mLookAtVector[1], mLookAtVector[2], mUpVector[0], mUpVector[1], mUpVector[2]);
+        if (mCalibrating) {
+            Point3D calibrationDevicePos = positions.get(1); //change this later TODO
+            if (calibrationDevicePos != null && ourPos != null) {
+                Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, (float)(calibrationDevicePos.x - ourPos.x), (float)(calibrationDevicePos.y - ourPos.y), (float)(calibrationDevicePos.z - ourPos.z), mUpVector[0], mUpVector[1], mUpVector[2]);
+            } else {
+                Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, mLookAtVector[0], mLookAtVector[1], mLookAtVector[2], mUpVector[0], mUpVector[1], mUpVector[2]);
+            }
+        } else {
+            Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, mLookAtVector[0], mLookAtVector[1], mLookAtVector[2], mUpVector[0], mUpVector[1], mUpVector[2]);
+        }
 
         // Calculate the projection and view transformation
         Matrix.multiplyMM(mVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
@@ -111,15 +131,11 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         Matrix.invertM(mInvertedVPMatrix, 0, mVPMatrix, 0);
 
         //Draw cubes on positions grabbed
-        Map<Integer, Point3D> positions = mTagParser.getPositions();
-        if (positions != null) {
-            Point3D ourPos = positions.get(5);
-            if (ourPos != null) {
-                for (Map.Entry<Integer, Point3D> e : positions.entrySet()) {
-                    if (e.getKey() != 5) {
-                        Point3D pos = e.getValue();
-                        mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5f * (float) (pos.x - ourPos.x), 5f * (float) (pos.y - ourPos.y), 5f * (float) (pos.z - ourPos.z), "Tag " + e.getKey());
-                    }
+        if (positions != null && ourPos != null) {
+            for (Map.Entry<Integer, Point3D> e : positions.entrySet()) {
+                if (e.getKey() != mTagParser.ourId) {
+                    Point3D pos = e.getValue();
+                    mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5f * (float) (pos.x - ourPos.x), 5f * (float) (pos.y - ourPos.y), 5f * (float) (pos.z - ourPos.z), "Tag " + e.getKey());
                 }
             }
         }
@@ -207,12 +223,37 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
                     break;
             }
 
-            Matrix.transposeM(mRotationMatrix, 0, tempMatrix, 0);
+            Matrix.transposeM(mRotationMatrixRaw, 0, tempMatrix, 0);
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    public float[] getRotationMatrixRaw() {
+        return mRotationMatrixRaw;
+    }
+
+    public float[] getRotationCalibrationMatrix() {
+        return mRotationCalibrationMatrix;
+    }
+
+    public float[] getRotationMatrix() {
+        return mRotationMatrix;
+    }
+
+
+    public boolean isCalibrating() {
+        return mCalibrating;
+    }
+
+    public void setCalibrating(boolean mCalibrating) {
+        this.mCalibrating = mCalibrating;
+    }
+
+    public float[] getInvertedViewMatrix() {
+        return mInvertedViewMatrix;
     }
 }
