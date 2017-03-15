@@ -14,7 +14,7 @@ The rangefinding subsystem is comprised of \textbf{nodes} in a network, each of 
 
 (PUT IN A DIAGRAM OF A NETWORK AND RANGES HERE)
 
-Each node is either an \textbf{anchor} or a \textbf{tag}. Both tags and anchors use essentially the same hardware and code, but anchors are assumed to be stationary while tags are mobile. Stationary nodes are required so as to provide a consistent frame of reference for other nodes when calculating positions later on. More information on this can be found in !!!TO-DO INSERT LABEL!!!.
+Each node is either an \textbf{anchor} or a \textbf{tag}. Both tags and anchors use essentially the same hardware and code, but anchors are assumed to be stationary while tags are mobile. Stationary nodes are required so as to provide a consistent frame of reference for other nodes when calculating positions later on. More information on this can be found in Section~\ref{FrameOfReference}.
 
 The rangefinding subsystem's purpose is to determine the distances between every pair of nodes in the network. With this data, the position calculation subsystem can then determine the positions of every anchor and tag in 3D space.
 
@@ -46,13 +46,13 @@ It will be demonstrated how we sought to satisfy these criteria.
 (TODO TALK ABOUT WHAT IS COMING UP IN THE REST OF THE CHAPTER)
 
 \section{Time-of-Flight}
-This section briefly covers the math behind time-of-flight range calculations. For something more in-depth, the DWM1000 User Guide (INSERT CITATION HERE) has a comprehensive write-up of the different ways wireless ranging can be performed.
+This section briefly covers the math behind time-of-flight range calculations. For more in-depth information, \textcite{DW1000UserManual} has a comprehensive write-up of the different ways wireless ranging can be performed.
 
 \subsection{Basic Two-Way Ranging}
 In the case where there are two nodes communicating with each other, one can calculate the time it takes a signal to propagate between them, $t_p$, as:
 
 \[
-	t_p = \frac{t_{round} - t_{process}}{2}
+	t_p = \frac{T_{round} - T_{process}}{2}
 \]
 
 A diagram displaying this can be found in !!INSERT HERE!!.
@@ -61,12 +61,12 @@ A diagram displaying this can be found in !!INSERT HERE!!.
 Because the clocks of two nodes may not pass time at the same rate, the above equation will suffer from some inaccuracy. Indeed, because processing times far dwarf the time it takes a signal to propagate, clock skew errors can be quite significant. The DWM1000 User Guide presents, without proof, the following equation for more accurate rangefinding:
 
 \[
-	t_p = \frac{round_1  round_2 - reply_1 reply_2}{ round_1 + round_2 + reply_1 + reply_2}
+	t_p = \frac{T_{round1}  T_{round2} - T_{reply1} T_{reply2}}{T_{round1} + T_{round2} + T_{reply1} + T_{reply2}}
 \]
 
-$round_1$, $round_2$, $reply_1$, $reply_2$ are respectively the total times taken (EXPLAIN BETTER HERE). See (INSERT FIGURE HERE).
+$T_{round1}$, $T_{round2}$, $T_{reply1}$, $T_{reply2}$ are respectively the total times taken (EXPLAIN BETTER HERE). See (INSERT FIGURE HERE). Because the ranging has two rounds, after the initial calculation of range we can calculate a new range value for every single following transmission by re-using the last timestamps received for the beginning of the next round.
  
-A proof of this equation can be found in Appendix \ref{AsyncProof}.
+A proof of this equation can be found in Appendix~\ref{AsyncProof}.
 
 \section{Wireless Communications}
 At the start of the project, it was determined that a technology would need to be chosen to handle wireless communications for ranging purposes. A number of options were considered. The ideal technology would:
@@ -78,9 +78,11 @@ At the start of the project, it was determined that a technology would need to b
 \end{itemize}
 
 \subsection{Bluetooth in Phones: A Failed Approach}
-Originally, the goal was to use Bluetooth for ranging. The reason for this was that Android cellphones, which usually have Bluetooth transceivers, could be used for tags and anchors. This would save a large amount of time, as cellphones include batteries, are easy to program, and almost everyone has one (which would make letting people use our project as easy as downloading an app). We would just need to put a few phones running our app around a room, and we'd get ranging.
+Originally, the goal was to use Bluetooth for ranging. The reason for this was that Android cellphones, which usually have Bluetooth transceivers, could be used for tags and anchors. This would save a large amount of time, as cellphones include batteries, are easy to program, and almost everyone has one (which would make letting people use our project as easy as downloading an app). We would just need to put a few phones running our app around a room, and we'd get ranging. Others, such as \textcite{BluetoothIndoor}, were able to use Bluetooth to form indoor positioning systems.
 
-Unfortunately, it became clear early on that Bluetooth - specifically, Bluetooth used on Android cellphones - was not suitable. There were two ways to use Bluetooth for ranging: 
+Unfortunately, it became clear early on that Bluetooth -- specifically, Bluetooth used on Android cellphones -- was not suitable. 
+
+There were two ways to use Bluetooth for ranging, and we checked the viability of both: 
 
 \begin{itemize}
 	\item RSSI (received signal strength indicator), which is essentially a measure of how strong a received signal is. Because signal power drops off with the square of distance, RSSI can be used to determine distance from a cellphone. Indeed, there this is a cellphone app to do just that on the Google Play Store. Measurements showed that this was method had very low range, was very noisy (power levels varied wildly), and had a large latency between measurements. As well, RSSI values are not standard among cellphones, requiring many calibrations for each model of phone used. Due to these factors, it was determined that using RSSI for distance measurements was not well suited for the fine-grained location tracking this project sought. 
@@ -143,6 +145,23 @@ Every node in the network has a pre-determined ID, which is set when it the code
 
 Communications between the Arduino and the DWM1000 are handled through SPI. When the DWM1000 receives a message, it triggers an interrupt on the Arduino, which can then obtain the received data through SPI.
 
+\subsection{Communications Timing}
+In order to maximize the operating frequency of the system and provide as smooth a visual experience as possible on the phone, we want to minimize the amount of time a node is not transmitting. In order to do this, it was decided that nodes should transmit in order of their ID in a round robin fashion. A round of transmissions are performed, each node transmitting once, and then it repeats. When one node receives a transmission, it checks to see if it is its turn and then transmits as soon as it can.
+
+This round robin ordering is done by creating an ordered array of IDs in the network. When a transmission is received, the network increments the index of the next expected device to transmit by one. A device can tell whether it should transmit by checking to see if its ID is equal to the ID of the next expected node to transmit. If so, it transmits. 
+
+The downside to this approach is that if any transmission were to be lost, for example by interference or electrical noise, the network would grind to a halt as it waits for a message that is never going to come. A solution to this is to include a timer that tracks a window in which a message should be received. If it takes too long to receive a message, the device was assumed to have to failed to transmit for some reason and the next device will take their turn and transmit.
+
+To help the network be more robust, for example if one node has a clock that runs faster than the others (making it think a transmission is late when it is not), the network assumes whatever device last transmitted was right in doing so, and sets the index of the next node to transmit in the ordered array as being one higher than it.
+
+This approach also raises the question of how new nodes will join the network if a node is constantly transmitting. To solve this, a small delay is added at the end of each round. When a device wishes to enter the network, it waits for the end of a round, and then does a transmission in this added space. This transmission lets all devices know it is part of the network, and they will add it to their ordered lists of IDs appropriately. 
+
+In the code, this delay at the end of the round is implemented by adding a dummy node with the ID of 255 (the highest ID possible with one byte) to the network. The nodes will wait for a transmission from it at the end of each round, but it will never come, at which point the round starts over with the lowest ID transmitting.
+
+An unsolved issue here is what happens when the transmission to join the network is sent and it is not received. This will cause the joining device to have a wrong order, and it will transmit at the same time as another device every round. Since the chances of this happening are quite low and could be solved by resetting the joining device, this is not dealt with. A possible solution to deal with this would be having the receiving device check the responses of all the other nodes to make sure they all received its transmission, and, if they have not, then to retransmit in the space at the end of the round until they do.
+
+Code for this logic can be found in the \texttt{loop} function of Appendix~\ref{ArduinoCode}.
+
 \subsection{Range Information Protocol}
 The protocol for a transmission from a node is as follows:
 
@@ -160,28 +179,22 @@ The protocol for a transmission from a node is as follows:
 
 Parsing a received message and updating range values from the parsed data is fairly straightforward. The code in question can be found in the \texttt{parseReceived} function in Appendix \ref{ArduinoCode}.
 
-TALK ABOUT ROLLING TIMESTAMPS TO-DO!
-
 \subsection{Calculating a Delay}
+\label{CalculatingADelay}
 As part of the time of flight calculation, a timestamp is needed for when the message was received and for when the reply was sent. The DWM1000 does not offer a way to automatically set the time upon transmission, but does offer the ability to set a time when a message will be transmitted in the future. This timestamp can then be embedded in the message itself.
 
 Ideally, this delay is short. However, if the delay is too short, the Arduino will not be able to transmit the data the DWM1000 should send before the timestamp is passed. This causes a silent error, and the DWM will not transmit anything. As well, the delay specified is not the delay at which the DWM1000 will begin transmitting, it is the delay that the DWM1000 will begin transmitting the data itself. There is a ``premable'' sent before any transmission to allow the other devices in the network time to wake up and begin sniffing the air and know a message is coming. This time to send the preamble lasts quite a long time (approximately 1 microsecond per symbol in the problem (ADD CITATION HERE), which adds up to almost 2 ms). This was the most difficult to solve bug that was encountered in the design of the system.
 
-In the code, the minimum delay before we can transmit is the sum of the:
+In the code, the delay before we can transmit is the sum of the:
 \begin{itemize}
 	\item Number of symbols in the preamble $\times$ 1\si{\micro\second} (128 is the value used here, though the DWM offers a choice of preamble length)
 	\item Time required to calculate and send the timestamp using SPI, about 1000\si{\micro\second} (empirically determined)
 	\item Bytes of data to transmit $\times$ 4.5\si{\micro\second}, or 85 $\times$ number of devices in the network besides this one (empirically determined)
-	\item A fudge factor of about 200\si{\micro\second}
 \end{itemize}
 
+Adding in a fudge factor of about 200\si{\micro\second}, the delay we use in code for 6 devices is roughly 1800 \si{\micro\second}.
+
 It is important to minimize this delay so to increase the maximum frequency the system can update ranges at. The tradeoff of having a short preamble versus a long one is that a long preamble means there is less chance of a transmission being missed, at the cost of using more power and taking longer to send. The value of 128 was chosen as it was the smallest possible. Tests indicated that transmissions were not being lost enough to matter with such a short preamble.
-
-\subsection{Communications Timing}
-Go into the timeshare system when it is done. 
-
-\section{System Operating Frequency}
-Go into the math of how many updates per second can make, talk about how more devices on the network reduces this.
 
 \section{Calibrating}
 DWM1000s need to be calibrated to give correct distances due to the differences in hardware. There are a number of factors affecting the DWM1000, such as temperature. Some of these factors are controlled for in software in the arduino-dw1000 library. For a detailed overview of the possible errors and how to correct for them, consult the INCLUDE SOURCE HERE IT WAS A PDF ON THE SITE I READ.
@@ -190,8 +203,78 @@ The primary factor which could not be controlled for by Decawave is the antenna 
 
 These constants required a slight tweak to the DWM1000 library. INSERT LINK TO SOURCE CODE OF OUR CHANGED VERSION HERE.
 
-\section{Results}
-Go into how accurate rangefinding is, operating frequency, etc. Have tables!
+\section{Operating Frequency Analysis}
+\label{OperatingFrequencyAnalysis}
+In order to estimate the operating frequency of the rangefinding subsystem -- that is, how many times we can get the range from all devices to a single device per second -- we see that the frequency will be the inverse of the time taken to complete one round (the system performs one range update per device per round), assuming no lost transmissions. That is,
 
-\section{Conclusion}
-Talk about how we now have a subsystem which can fully handle calculating ranges between things.
+\[
+ 	f_{op} = 1/T_{round}
+\]
+
+The time it takes a round is equal to the time it takes the devices to each parse a received message and transmit a message. Determining the time it takes to transmit a message is a little tricky to calculate due to the requirement to include the delay before the message is sent. A rough estimate of the time it takes to do a round of transmissions is:
+
+\[
+	T_{round} =  N(T_{device} + T_{prop}) + T_{end}
+\]
+where $N$ is the number of nodes in the network (the 4 anchors and 3 tags that were made make 7), $T_{device}$ is the time it takes a device to fully receive and transmit, $T_{prop}$ is the time it takes the message propogate (this will not be constant, but it is so small as to be ignorable in this analysis), and $T_{end}$ is the duration of the pause at the end of the round. 
+
+We can estimate $T_{device}$ as
+
+\[
+	T_{device} \approx T_{rx} + T_{tx} + T_{txDelay}
+\]
+where $T_{rx}$ is the time it takes to parse a received message (7-8 ms empirically), $T_{tx}$ is the time it takes to create the packet to send to the DWM1000 (1-2 ms empirically), $T_{txDelay}$ is the delay before the ranging packet can be sent (calculated in Section~\ref{CalculatingADelay}, about 1800 \si{\micro\second}).
+
+Putting it all together, the equation estimating the operating frequency of the system is:
+\[
+	T_{round} \approx N(T_{rx} + T_{tx} + T_{txDelay}) + T_{end}
+\]
+
+$T_{end}$ is implemented in the code as a dummy device which the network will never receive a message for, allowing it to expire. Perhaps unintuitively, it is not actually equal to the time it takes a normal device to be rejected. This is because, when the round ends, it will not have transmitted anything, meaning that the time it takes to parse a received message will be 0 from it and the next round will start as soon as the first device in the transmission order array can transmit. $T_{end}$, then, is about equal to $T_{tx} + T_{txDelay}$.
+
+Plugging the above numbers into the equation, we find we should expect that a network composed of 2 devices can operate at a frequency of about 40Hz and a network of 7 devices can operate at about 13Hz. These estimates are quite close to the empirical measurements made (see Section~\ref{RangefindingResults}).
+
+As can be seen from the equations, the system is primarily bottlenecked by the speed at which messages can be processed and transmitted. These numbers are well above what the minimum requirements for the system, but they are below an ideal 60Hz (at which point the updates would be so smooth as to seem mostly continuous to the human eye and there would be marginal benefit to improving the frequency). Originally, it was thought that the Arduino's speed would not matter, but this turned out to not be the case. Future work on this project would benefit from finding a faster microcontroller, or perhaps offloading all processing to the cell phone each tag is hooked up to. 
+
+An optimization that was considered and rejected due to time constraints was offloading only the time-of-flight calculation to the cell phones, instead transmitting timestamps instead of calculated ranges in the ranging packets. The Arduino Pro Mini was found to take roughly 1ms to calculate each range. Implementing this would increase the operating frequency by about 1Hz - not enough to justify any time spent on it.
+
+\section{Results}
+\label{RangefindingResults}
+Results showed that the DWM1000 was close to as accurate as Decawave claimed (within 10cm). Of note, sometimes the reported ranges would glitch and be off by a meter or more. Table~\ref{tab:rangefindingAccuracy} shows the accuracy of the system. Though the accuracy of the rangefinding system was not a direct requirement of the project as a whole, the accuracy of the rangefinding system translates into accuracy of the position calculating system and thus the accuracy of the markers on the AR display.
+
+\begin{table}
+\caption{The effects of treatments X and Y on the four groups studied.}
+\label{tab:rangefindingAccuracy}
+\centering
+\begin{tabular}{l l l}
+\toprule
+\tabhead{Groups} & \tabhead{Treatment X} & \tabhead{Treatment Y} \\
+\midrule
+1 & 0.2 & 0.8\\
+2 & 0.17 & 0.7\\
+3 & 0.24 & 0.75\\
+4 & 0.68 & 0.3\\
+\bottomrule\\
+\end{tabular}
+\end{table}
+
+The operating frequency was close to the values predicted by the theory in Section~\ref{OperatingFrequencyAnalysis}. Predicted and actual values can be found in Table~\ref{tab:rangefindingFrequency}.
+
+\begin{table}
+\caption{The effects of treatments X and Y on the four groups studied.}
+\label{tab:rangefindingFrequency}
+\centering
+\begin{tabular}{l l l}
+\toprule
+\tabhead{Groups} & \tabhead{Treatment X} & \tabhead{Treatment Y} \\
+\midrule
+1 & 0.2 & 0.8\\
+2 & 0.17 & 0.7\\
+3 & 0.24 & 0.75\\
+4 & 0.68 & 0.3\\
+\bottomrule\\
+\end{tabular}
+\end{table}
+
+
+

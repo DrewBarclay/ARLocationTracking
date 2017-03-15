@@ -26,7 +26,8 @@
 11pt, % The default document font size, options: 10pt, 11pt, 12pt
 oneside, % Two side (alternating margins) for binding by default, uncomment to switch to one side
 english, % ngerman for German
-singlespacing, % Single line spacing, alternatives: onehalfspacing or doublespacing
+%singlespacing, % Single line spacing, alternatives: onehalfspacing or doublespacing
+onehalfspacing, % Single line spacing, alternatives: onehalfspacing or doublespacing
 %draft, % Uncomment to enable draft mode (no pictures, no links, overfull hboxes indicated)
 %nolistspacing, % If the document is onehalfspacing or doublespacing, uncomment this to set spacing in lists to single
 %liststotoc, % Uncomment to add the list of figures/tables/etc to the table of contents
@@ -37,6 +38,7 @@ hidelinks, %To remove colored links
 headsepline, % Uncomment to get a line under the header
 %chapterinoneline, % Uncomment to place the chapter title next to the number on one line
 %consistentlayout, % Uncomment to change the layout of the declaration, abstract and acknowledgements pages to match the default layout
+table, %for xcolor
 ]{MastersDoctoralThesis} % The class file specifying the document structure
 
 \usepackage[utf8]{inputenc} % Required for inputting international characters
@@ -54,12 +56,14 @@ headsepline, % Uncomment to get a line under the header
 
 \usepackage[]{siunitx} %for SI units
 
-\addbibresource{example.bib} % The filename of the bibliography
+\addbibresource{main.bib} % The filename of the bibliography
 
 \usepackage[autostyle=true]{csquotes} % Required to generate language-dependent quotes in the bibliography
 
-\usepackage{color, colortbl} % For colored tables
-\definecolor{Gray}{gray}{0.9}
+%\usepackage{color, colortbl} % For colored tables
+
+\definecolor{Gray}{gray}{0.925}
+\definecolor{Transparent}{gray}{1}
 
 %----------------------------------------------------------------------------------------
 %	MARGIN SETTINGS
@@ -187,9 +191,18 @@ headsepline, % Uncomment to get a line under the header
 
 \begin{acknowledgements}
 \addchaptertocentry{\acknowledgementname} % Add the acknowledgements to the table of contents
-The acknowledgments and the people to thank go here, don't forget to include your project advisor\ldots
+This project would not have been possible without a lot of people:
 
-Include a list here of everyone who's open source stuff we used, and eg. the guy who did the ranging proof on those forums?
+\begin{itemize}
+	\item Our advisors, Dr. Ekram Hossain and Dr. Bob McLeod for taking us on despite having a risky project. Bob McLeod's generous financial support was a great help as well.
+	\item Zoran Trajkoski, for helping us learn to solder (and for doing a lot of the soldering, saving us hours of time).
+	\item Derek Oliver for allowing us to form a group of three, rather than the minimum of four normally required. 
+	\item Aidan Topping for reading over the report and offering suggestions.
+	\item Thomas ``thotro'' Trojer for his arduino-dw1000 project on Github, which allowed us to quickly determine whether we could do the project at all.
+	\item Aleksandar ``d3alek'' Kodzhabashev and fractious for their work on the Texample2 3D text rendering library we used.
+\end{itemize}
+
+Thank you all.
 \end{acknowledgements}
 
 \begin{contributions}
@@ -199,37 +212,43 @@ There were three main facets to the technical side of the project: rangefinding,
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{| l | c c c |}
-  \hline
-   & Drew & Maricar & Llandro \\
-  \hline
+\begin{tabular}{ l | c | c | c }
+  \toprule
+   \tabhead{Task} & \tabhead{Drew} & \tabhead{Maricar} & \tabhead{Llandro} \\
+   \midrule
+   \rowcolor{Gray}
+  \tabhead{Research} & & & \\
+  ~~Bluetooth Rangefinding & \textbullet & & \\
+  ~~Google Cardboard & & \textbullet &  \\
+  ~~DWM1000 and Arduino Code & & & \textbullet \\
+  \midrule
   \rowcolor{Gray}
-  Research & & & \\
-  Google Cardboard & & \textbullet &  \\
-  DWM1000 and Arduino Code & & & \textbullet \\
+  \tabhead{Rangefinding} & & & \\
+  ~~PCB Design & \textbullet & &  \\
+  ~~Soldering & \textbullet & & \textbullet  \\
+  ~~Software & \textbullet && \\
+  \midrule
   \rowcolor{Gray}
-  Rangefinding & & & \\
-  PCB Design & \textbullet & &  \\
-  Soldering & \textbullet & & \textbullet  \\
-  Software & \textbullet && \\
+  \tabhead{Position Calculation} & & & \\
+  ~~Math & \textbullet & & \textbullet \\
+  ~~Coding & \textbullet & & \\
+  \midrule
   \rowcolor{Gray}
-  Position Calculation & & & \\
-  Math & \textbullet & & \textbullet \\
-  Coding & \textbullet & & \\
+  \tabhead{Augmented Reality} & & & \\
+  ~~Camera Capture & \textbullet & \textbullet & \textbullet \\
+  ~~3D Graphics & \textbullet & & \\
+  ~~Graphical Assets & & \textbullet & \\
+  \midrule
   \rowcolor{Gray}
-  Augmented Reality & & & \\
-  Camera Capture & \textbullet & \textbullet & \textbullet \\
-  3D Graphics & \textbullet & & \\
-  \rowcolor{Gray}
-  Administration & & & \\
-  Design Proposal (Oral) & & \textbullet  & \\
-  Design Proposal (Written) & \textbullet & \textbullet & \textbullet \\
-  Design Review 2 & & & \textbullet \\
-  Design Review 3 & \textbullet & & \\
-  Design Review 4 & \textbullet & & \\
-  Final Report & \textbullet & \textbullet & \textbullet \\
-  Final Presentation & \textbullet & \textbullet & \textbullet \\
-  \hline
+  \tabhead{Administration} & & & \\
+  ~~Design Proposal (Oral) & & \textbullet  & \\
+  ~~Design Proposal (Written) & \textbullet & \textbullet & \textbullet \\
+  ~~Design Review 2 & & & \textbullet \\
+  ~~Design Review 3 & \textbullet & & \\
+  ~~Design Review 4 & \textbullet & & \\
+  ~~Final Report & \textbullet & \textbullet & \textbullet \\
+  ~~Final Presentation & \textbullet & \textbullet & \textbullet \\
+  \bottomrule
   
 \end{tabular}
 \end{table}

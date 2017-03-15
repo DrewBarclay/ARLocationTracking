@@ -16,3 +16,5 @@
 *.lot
 *.out
 *.run.xml
+*.bbl
+*.blg
