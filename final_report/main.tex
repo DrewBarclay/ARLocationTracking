@@ -29,7 +29,7 @@ english, % ngerman for German
 %singlespacing, % Single line spacing, alternatives: onehalfspacing or doublespacing
 onehalfspacing, % Single line spacing, alternatives: onehalfspacing or doublespacing
 %draft, % Uncomment to enable draft mode (no pictures, no links, overfull hboxes indicated)
-%nolistspacing, % If the document is onehalfspacing or doublespacing, uncomment this to set spacing in lists to single
+nolistspacing, % If the document is onehalfspacing or doublespacing, uncomment this to set spacing in lists to single
 %liststotoc, % Uncomment to add the list of figures/tables/etc to the table of contents
 %toctotoc, % Uncomment to add the main table of contents to the table of contents
 %parskip, % Uncomment to add space between paragraphs
@@ -37,7 +37,7 @@ onehalfspacing, % Single line spacing, alternatives: onehalfspacing or doublespa
 hidelinks, %To remove colored links
 headsepline, % Uncomment to get a line under the header
 %chapterinoneline, % Uncomment to place the chapter title next to the number on one line
-%consistentlayout, % Uncomment to change the layout of the declaration, abstract and acknowledgements pages to match the default layout
+consistentlayout, % Uncomment to change the layout of the declaration, abstract and acknowledgements pages to match the default layout
 table, %for xcolor
 ]{MastersDoctoralThesis} % The class file specifying the document structure
 
@@ -51,6 +51,8 @@ table, %for xcolor
 \usepackage{listings} %for code highlighting
 
 \usepackage{amsmath}
+
+\usepackage{tikz}
 
 \usepackage[backend=bibtex,style=authoryear,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
 

@@ -6,16 +6,24 @@
 
 %----------------------------------------------------------------------------------------
 
-\section{Stuff}
-The Introduction
-can be made into its own chapter but no more than about 10\% of the space of the total report
-should be allocated to introductory remarks. The Introduction is a good place to give a literature
-review (i.e., if a literature review is not the main purpose of the report), put the subject matter into
-context, and give the relevant motivation for the work which was performed. The remaining body
-of the report should be broken up into chapters in a logical manner.
+Knowledge is power. The more you know, the more powerful you are. The constantly evolving situation requires that more information is being passed down even faster and even sooner. What better way of obtaining that information is to visually come up in front of you!
 
-\subsection{Motivation}
-Talk about FPS games where positions are shown and allow easy finding of team members? 
+Augmented Reality, where the visual aspects from your graphical user interface (GUI) can now be seen in real time and in front of you is, is one of the many innovations coming up to solve this question. Imagine seeing the actual speedometer on your windshield rather than on on your dashboard. Or seeing where the person with the radio is when out in the field. This absolutely sounds like something that comes from a science fiction novel, but with how technology is quickly evolving nowadays, it seems closer to reality than later. This is already demonstrated in mobile games such as Pokemon GO! where the tiny virtual pocket monster is seen dancing about on the book sitting on your desk in front of you.
 
-\subsection{Overview of the Design}
-Go over tags/anchors (define each), how each tag is hooked up to a cellphone by USB, where cellphone calculates positions and shows them. Talk specifically about Arduino/DWM1000?
+In order to apply a practical application to this, this project takes the visual heads up display very popular in video games such as Call of Duty, Halo and many others, and reproduces it for use in the actual real world. While there are many applications and ideas for a heads up display, this project is focused on locating and tracking certain points and other people within display. With further development and investment, we hope to find this project expanded and improved upon for many applications. For example, keeping track of a person’s pulse while a surgeon is performing surgery or  the marking of a very important target on a car’s windshield.
+
+[insert image of a HUD example]
+
+To keep track of a target for the AR application to find, tags are used to mark points, both of which are arbitrary and needed. The more tags available to use as points, the more accurate a reading would be. The tags use triangulation in order to locate and measure distance from the user, and to the point. A minimum of four tags are necessary to determine from the user to his destination in a 3D plane.
+
+There are three main parts to this project: range finding, position calculation and augmented reality rendering. Range finding requires the use of the tags mentioned above to get the data fed to the device. Position calculation involves data processing from the tags within the device for use within the phone. Rendering will then take the data processed and put it on the screen.
+
+[Insert image of cellphone screen with arrows and tag locations]
+
+Range finding is done wirelessly with tags receiving packets of information to and from devices. The time it takes to receive broadcasted signals determine distances between sensors. These tags uses Ultra Wideband (UWB) to communicate between each other and the device together.
+
+[insert image of tags here]
+
+Data processing is all done on our android devices, which can be read on a tag attached to an Arduino chip. From there, the android device can process the data which can be readied for rendering. From there, using our phones, the data points will be rendered in real time in conjunction with our cameras to point out the location of the tags or the other device also supporting these tags. (Might add: Using Google Cardboard, Google’s own Virtual Reality SDK, we can emulate using it as our own HUD by mounting the device on a headset.)
+
+[insert image of Google Cardboard if needed]
