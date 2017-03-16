@@ -14,6 +14,7 @@
 
 As Decawave did not provide a proof for their double-sided two-way ranging formula, others have independently done so \cite{AsyncProofPost}.
 
+Clock drift is an issue where a clock does not run at the same rate as the reference clock, the clock gradually 'drifts' apart and desynchronizes from the other clock. The main objective here is to get rid of the clock drift difference between the nodes which is a major source of error for us.
 We begin by assuming that the clock of one node is off by alpha ($\alpha$) and the other by beta ($\beta$), the key here was to find the time of flight in a virtual clock that would be the mean value of alpha and beta.
 \\
 \[ \alpha a = 2t + \beta c  \tag{1} \label{eq:1} \]
