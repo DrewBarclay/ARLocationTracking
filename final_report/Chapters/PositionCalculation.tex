@@ -15,27 +15,27 @@ The anchors use ultrawideband technolgy to communicate with each other and send 
 
 
 \section{High-Level Example in 2D}
-To start the position calculation we take three different anchors for example $a_{0}$, $ a_{1}$  and $a_{2}$. We set an arbitrary point as the origin $a_{0}$, then we proceed to make a horizontal line from $a_{0}$ to another anchor say $a_{1}$, since we have all the distances between the anchors we can now use basic trigonometry to calculate the position of our last anchor $a_{2}$.
-An Example calculation is as follows:
+To start the position calculation we take three different anchors for example $a_{0}$, $ a_{1}$  and $a_{2}$. We set an arbitrary point as the origin $a_{0}$, then we proceed to make a horizontal line from $a_{0}$ to another anchor say $a_{1}$, since we have all the distances between the anchors we can now use basic trigonometry to calculate the position of our last anchor $a_{2}$,
+an example calculation is as follows:
 \\\\
 distance from anchor x to anchor y: $d_{xy}$, we use cosine law to determine the angle
 \\
-\[ \Theta = \cos ^{ - 1}\Big(\frac{d_{01}^2 + d_{02}^2 - d_{12}^2 }{2*d_{01}*d_{02}}\Big)\]
+\[ \Theta = \cos ^{ - 1}\Big(\frac{d_{01}^2 + d_{02}^2 - d_{12}^2 }{2 d_{01} d_{02}}\Big)\]
 \\
 when we have the angle we can now calculate the x and y coordinates:
 \\
-\[ x_2 = cos(\Theta) * d_{12} \]
-\[ y_2 = sin(\Theta) *  d_{12} \]
+\[ x_2 = cos(\Theta) d_{12} \]
+\[ y_2 = sin(\Theta) d_{12} \]
 
 \section{Extending This to 3D}
 Extending the subsystem to three dimensions does not really change the calculation all that much except that we now need four anchors to get a reliable position in three dimensions. We have our four anchors: $a_{0}$, $a_{1}$ , $a_{2}$ and $a_{3}$, we arbitrarily set one as the origin $a_{0}$(0, 0, 0) and we now make a horizontal line to another anchor say $a_{1}$ and since we know the distance between these two anchors we can get the position to be $a_{1}$(0, $d_{01}$, 0), where $d_{01}$ is the distance between $a_{0}$ and $a_{1}$. We can now form a triangle with the third anchor and use cosine law to determine the position and we arbitrarily set the z value to 0.
 \\
 We now have the coordinates for the third anchor, but we do not know the correct orientation in the z axis, it could be either positive or negative. This is where the fourth anchor comes in, we use the anchor to create a temporary point using the same method we use above.
 \\
-\[ \Theta = \cos ^{ - 1}\Big(\frac{d_{01}^2 + d_{03}^2 - d_{13}^2 }{2*d_{01}*d_{03}}\Big)\]
+\[ \Theta = \cos ^{ - 1}\Big(\frac{d_{01}^2 + d_{03}^2 - d_{13}^2 }{2 d_{01} d_{03}}\Big)\]
 \\
-\[ x_{temp} = cos(\Theta) * d_{13} \]
-\[ y_{temp} = sin(\Theta) *  d_{13} \]
+\[ x_{temp} = cos(\Theta) d_{13} \]
+\[ y_{temp} = sin(\Theta) d_{13} \]
 \[ z_{temp} = 0 \]
 \\
 We will rotate around the x-axis by keeping the x value constant and taking the y distance and z distance to be a circle of radius of $y_{temp}$.We calculate the distance between the x value of the temporary point and the x value of anchor 2, we denote this value $\Delta x$.
@@ -44,11 +44,11 @@ We will rotate around the x-axis by keeping the x value constant and taking the 
 \\
 Now that we have $\Delta x$ we can now calculate the position of our fourth anchor using cosine law.
 \\
-\[\Theta = \cos ^{ - 1}\Big(\frac {\Delta x^2 - d_{23}^2 + y_{2}^2 + y_{temp}^2}{2*y_{2}*y_{temp}}\Big)\]
+\[\Theta = \cos ^{ - 1}\Big(\frac {\Delta x^2 - d_{23}^2 + y_{2}^2 + y_{temp}^2}{2 y_{2} y_{temp}}\Big)\]
 \\
 \[ x_{3} = x_{temp} \]
-\[ y_{3} = cos(\Theta) * y_{temp} \]
-\[ z_{3} = sin(\Theta) * y_{temp} \]
+\[ y_{3} = cos(\Theta) y_{temp} \]
+\[ z_{3} = sin(\Theta) y_{temp} \]
 
 
 \section{Frame of Reference}
