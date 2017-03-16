@@ -57,6 +57,8 @@ table, %for xcolor
 \usepackage{tikz}
 
 \usepackage[backend=bibtex,style=ieee,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
+\usepackage{xpatch}
+ \usepackage{url}
 
 \usepackage[]{siunitx} %for SI units
 
@@ -354,6 +356,8 @@ $\omega$ & angular frequency & \si{\radian} \\
 %	BIBLIOGRAPHY
 %----------------------------------------------------------------------------------------
 
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
 \printbibliography[heading=bibintoc]
 
 %----------------------------------------------------------------------------------------

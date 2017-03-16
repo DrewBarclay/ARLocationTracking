@@ -6,18 +6,85 @@
 
 %----------------------------------------------------------------------------------------
 
-\section{Overview}
-Talk about the goal of this section: to take positions from the position calculation subsystem, then render them on the screen to show where things are (even behind walls, etc.)
+This chapter covers the AR portion of the project. The AR subsystem takes the positions from the position calculation subsystem and renders them on the screen. If they cannot be directly rendered, an arrow is drawn on the edge of the screen to show which way the object is from the user. An example of this can be found in Figure~\ref{dfis} (DO THIS FIGURE).
 
-Make sure to note that we'll have youtube videos up and give links.
+The code for the AR subsystem can be found at (PROVIDE LINK HERE).
 
-Don't forget an appendix with major code.
+This chapter covers the following topics:
+\begin{enumerate}
+	\item A description of OpenGL and the basics of how it can be used. 
+	\item A brief overview of the math used later in this section, including homogenous coordinates and translation/rotation matrices.
+	\item How objects and text can accurately be drawn on the screen overlaid on a camera image.
+	\item How the coordinate system of the position calculation system can be transformed into real world coordinates through the cell phone's sensors.
+	\item Examples of the accuracy of the subsystem.
+\end{enumerate}
 
-\section{Tech Used}
+\section{OpenGL}
 Go over OpenGL, the 3D text rendering library we're using, Android's rotation calculations.
 
+\section{Projection, View, Model Matrices}
+maybe put this below
+
 \section{3D Math Overview}
-Touch on matrices, projection/view/model matrices. Talk about how we use OpenGL's implementation to place things in 3D space.
+This section covers the basics of using matrices to render 3D scenes. A full treatment of the subject is beyond the scope of this report, though other resources on the subject exist (PUT CITATION HERE).
+
+\subsection{Rotation Matrices}
+
+\subsection{Homogenous Coordinates}
+For a given 3x3 matrix $M$ and an arbitrary point in 3D space $p = (x, y, z)$, there is no $\mathbf{M}$ such that will multiplying it by any $p$ will cause $p$ to be translated by a specified number of units. There is, however, a way to do it with a homogenous point and a 4x4 matrix. This is one of the reasons homogenous coordinates are used in OpenGL.
+
+Homogenous coordinates are coordinates in space which contain an extra element $w$ which acts as a scaling factor on the three elements. For example, a 3D homogenous coordinate $p_h$ could be written as:
+
+\[ p_h = (x_h, y_h, z_h, w) \]
+
+This relates to a regular point in 3D space:
+
+\[ (x, y, z) = (x_h / w, y_h / w, z_h / w) \] 
+
+For example, the homogenous point $(1, 1, 1, 1)$ maps to the regular 3D point $(1, 1, 1)$. The homogenous point $(2, 2, 2, 2)$ does as well.
+
+A translation matrix $T$ that moves a point $p$  by $(T_x, T_y, T_z)$ units, is:
+
+\[
+\mathbf{T} = \begin{bmatrix}
+1 & 0 & 0 & T_x \\
+0 & 1 & 0 & T_y \\
+0 & 0 & 1 & T_z \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+To prove this, we'll multiply out a homogenous point $p_h = (x_h, y_h, z_h, w)$ by $\mathbf{T}$ and show that, when converted to a regular 3D point, it equals $(x/w + T_x, y/w + T_y, z/w + T_z)$.
+
+\[ p_{h}\prime = \mathbf{T} p_h \]
+
+\[
+  p_{h}\prime = \begin{bmatrix}
+1 & 0 & 0 & T_x \\
+0 & 1 & 0 & T_y \\
+0 & 0 & 1 & T_z \\
+0 & 0 & 0 & 1
+\end{bmatrix} 
+\begin{bmatrix}
+x_h \\ y_h \\ z_h \\ w 
+\end{bmatrix}
+\]
+
+\[
+ p_{h}\prime = \begin{bmatrix}
+ x_h + w T_x \\
+ y_h + w T_y \\
+ z_h + w T_z \\
+ w
+ \end{bmatrix}
+ \]
+ 
+ Now, if we convert $p_{h}\prime$ to a regular 3D point $p$, we get:
+ 
+ \[ p = (\frac{x_h}{w} + \frac{w T_x}{w},  \frac{y_h}{w} + \frac{w T_y}{w}, \frac{z_h}{w} + \frac{w T_z}{w}) \]
+ \[ p = (x/w + T_x, y/w + T_y, z/w + T_z) \]
+ 
+ which is the translation of $p$ by $(T_x, T_y, T_z)$ units.
 
 \section{Camera Field of View and OpenGL Field of View}
 Talk about how we make positions accurate here. Go over how we just overlay the camera and OpenGL surface on each other. Discuss Android camera limitations/FPS results.

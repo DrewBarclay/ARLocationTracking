@@ -1,16 +1,21 @@
 % Rangefinding
 
-\chapter{Rangefinding} % Main chapter title
+\chapter{Determining Ranges} % Main chapter title
 
 \label{Rangefinding}
 
 %----------------------------------------------------------------------------------------
 
-\section{Overview}
- Rangefinding is the act of determining the distance between two things.
- 
-\subsection{The System}
+This chapter covers the rangefinding subsystem, the part of the project which determines the ranges between two sensors. The ranges are later fed into the position calculation subsystem, which determines the positions of the sensors in 3D space.
 
+This chapter covers three main topics:
+\begin{enumerate}
+	\item A description of what the rangefinding system does, and the devices composing it.
+	\item The math behind calculating the range between two sensors.
+	\item A description of the networking protocol developed for this project.
+\end{enumerate}
+
+\section{The System}
 \begin{figure}
 	\centering
 	\input{Figures/ExampleNetwork}
@@ -25,8 +30,8 @@ Each node is either an \textbf{anchor} or a \textbf{tag}. Both tags and anchors 
 
 The rangefinding subsystem's purpose is to determine the distances between every pair of nodes in the network. With this data, the position calculation subsystem can then determine the positions of every anchor and tag in 3D space. An example 2D rangefinding network is shown in Figure~\ref{fig:ExampleNetwork}.
 
-\subsection{Rangefinding}
-Rangefinding is done wirelessly. The underlying concept is that if we precisely note the times at which we send and receive a signal, then -- since light travels at a fixed speed -- we can determine the distance the signal traveled, which is the distance between the nodes. 
+\section{Rangefinding}
+Rangefinding is the act of determining the distance between two things. Rangefinding is done wirelessly. The underlying concept is that if we precisely note the times at which we send and receive a signal, then -- since light travels at a fixed speed -- we can determine the distance the signal traveled, which is the distance between the nodes. 
 
 The basic algorithm for the network is: 
 \begin{enumerate}
@@ -39,21 +44,19 @@ This method of calculating range is known as \textbf{time-of-flight} (TOF).
 
 Each node is comprised of a DWM1000, can send wireless signals, and an Arduino microcontroller.
 
-\subsection{Requirements}
-There are a number of useful characteristics a rangefinding system should have:
+\section{Requirements}
+The scope of the project is to handle precise rangefinding indoors in a room. The requirements for the system were:
 \begin{itemize}
-	\item Ranges should be accurate and not very noisy.
-	\item Ranges should be calculated at a high frequency. If they are not, then we cannot calculate positions quickly and moving objects will have their positions displayed inaccurately.
-	\item The system should be able to cover a large area. 
-	\item The system should be robust to nodes entering/leaving the network. 
+	\item The system must be able to produce ranges accurate to within three meters or less that are not noisy (regular swings of $\pm$ one meter would be unacceptable). Otherwise, what was displayed in the augmented reality portion of the project would not be useful. 
+	\item The system must calculate ranges at frequencies greater than 3Hz. Otherwise, moving objects will have their positions displayed inaccurately (and the system would be misleading).
+	\item The system must be able to rangefind within an area the size of a room (at least 5x5 meters). 
+	\item The system must be able to robustly handle nodes entering and leaving the network. 
 \end{itemize}
 
 It will be demonstrated how we sought to satisfy these criteria.
 
-(TODO TALK ABOUT WHAT IS COMING UP IN THE REST OF THE CHAPTER)
-
 \section{Time-of-Flight}
-This section briefly covers the math behind time-of-flight range calculations. For more in-depth information, \parencite{DW1000UserManual} has a comprehensive write-up of the different ways wireless ranging can be performed as well as an error analysis.
+This section briefly covers the math behind time-of-flight range calculations. For more in-depth information, \textcite{DW1000UserManual} has a comprehensive write-up of the different ways wireless ranging can be performed as well as an error analysis.
 
 \subsection{Propagation Time}
 The goal behind time-of-flight is to measure the propagation time of a signal, $T_{prop}$. Once we obtain this, it is a simple measure to calculate the distance $d$ between the two nodes using the speed of light, $c$, with the following formula:
@@ -67,7 +70,7 @@ The goal behind time-of-flight is to measure the propagation time of a signal, $
 	\centering
 	\includegraphics[width=\linewidth]{Figures/BasicRanging.png}
 	\decoRule
-	\caption{Single-sided two-way ranging. Figure from \parencite{DW1000UserManual}.}
+	\caption{Single-sided two-way ranging \cite{DW1000UserManual}.}
 	\label{fig:BasicRanging}
 \end{figure}
 
@@ -85,7 +88,7 @@ where $T_{round}$ and $T_{process}$ are the total durations between receiving an
 	\centering
 	\includegraphics[width=\linewidth]{Figures/AsyncRanging.png}
 	\decoRule
-	\caption{Double-sided two-way ranging with three messages. Figure from \parencite{DW1000UserManual}.}
+	\caption{Double-sided two-way ranging with three messages \cite{DW1000UserManual}.}
 	\label{fig:AsyncRanging}
 \end{figure}
 
@@ -136,17 +139,25 @@ An unsolved issue here is what happens when the transmission to join the network
 Code for this logic can be found in the \code{loop} function of Appendix~\ref{ArduinoCode}.
 
 \section{Range Information Protocol}
+\begin{figure}
+	\centering
+	\input{Figures/NetworkPacket}
+	\decoRule
+	\caption{Data packet diagram for the rangefinding network.}
+	\label{fig:NetworkPacket}
+\end{figure}
+
 The protocol for a transmission from a node is as follows:
 
 \begin{itemize}
-	\item 1 byte for the ID of the transmitting node.
+	\item 1 byte for the ID of the transmitting node. The ID cannot not be 255.
 	\item 5 bytes for the timestamp of the sending of the message.
 	\item For each device the transmitting node has knowledge of:
 	\begin{itemize}
-		\item 1 byte for the ID of the device
-		\item 1 byte for the shared counter (used to detect lost transmissions)
-		\item 5 bytes for timestamp of last received message from the device
-		\item 4 bytes for last calculated range	
+		\item 1 byte for the ID of the device.
+		\item 1 byte for a shared transmission counter. This counter is incremented by one whenever a message is received, and also incremented when one is sent. If a message is received or sent and the transmission counter on the device does not match the counter in the message, a transmission was lost. The message is thrown away and the transmission counter set to 0 to let the other device know there was an error on the next transmission.
+		\item 5 bytes for timestamp of last received message from the device.
+		\item 4 bytes for last calculated range to that device. Note that the two devices will each calculate slightly different ranges to each other.
 	\end{itemize} 
 \end{itemize}
 

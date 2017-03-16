@@ -14,7 +14,9 @@ At the start of the project, it was determined that a technology would need to b
 \end{itemize}
 
 \subsection{Bluetooth in Phones: A Failed Approach}
-Originally, the goal was to use Bluetooth for ranging. The reason for this was that Android cellphones, which usually have Bluetooth transceivers, could be used for tags and anchors. This would save a large amount of time, as cellphones include batteries, are easy to program, and almost everyone has one (which would make letting people use our project as easy as downloading an app). We would just need to put a few phones running our app around a room, and we'd get ranging. Others, such as \parencite{BluetoothIndoor}, were able to use Bluetooth to form indoor positioning systems.
+(TODO REMOVE THIS OR APPENDIX IT WE SHOULD FOCUS ON OUR END PRODUCT AS PER AIDEN) 
+
+Originally, the goal was to use Bluetooth for ranging. The reason for this was that Android cellphones, which usually have Bluetooth transceivers, could be used for tags and anchors. This would save a large amount of time, as cellphones include batteries, are easy to program, and almost everyone has one (which would make letting people use our project as easy as downloading an app). We would just need to put a few phones running our app around a room, and we'd get ranging. Others were able to use Bluetooth to form indoor positioning systems \cite{BluetoothIndoor}.
 
 Unfortunately, it became clear early on that Bluetooth -- specifically, Bluetooth used on Android cellphones -- was not suitable. 
 
@@ -50,29 +52,65 @@ The hardware design for tags is an Arduino Pro Mini 3.3V connected to a DWM1000 
 \subsection{The Microcontroller}
 To interface with the DWM1000, a microcontroller was needed. The Arduino Pro Mini 3.3V was chosen because:
 \begin{itemize}
+	\item Others had used it with the DWM1000 and had good results \cite{LPSMini}.
 	\item Group members had previous experience with programming Arduinos.
-	\item It was inexpensive.
+	\item It was inexpensive (\$13 before tax).
 	\item It worked off of 3.3V power, which was what the DWM1000 required. This obviated the need for voltage stepping.
-	\item It is capable of floating point math, which is useful for asynchronous two-way ranging. As well, barely any processing power or RAM was perceived to be needed (this was not quite true). Each microcontroller only needed to hold a small number of timestamps, so the small amount of memory and slow processor was not important.
-	\item It has a small physical size. As tags are attached to cellphones, they must be small.
-	\item Batteries would not be needed to power tags, since power could be delivered via USB from the cellphone. This further simplified the design and kept costs low.
+	\item It was capable of floating point math, which is useful for asynchronous two-way ranging. As well, barely any processing power or RAM was perceived to be needed (this was not quite true). Each microcontroller only needed to hold a small number of timestamps, so the small amount of memory and slow processor was not important.
+	\item It had a small physical size. As tags are attached to cellphones, they must be small.
+	\item Batteries would not be needed to power tags, since power could be delivered via USB from the cellphone. This further simplified the design and kept costs low, though the USB cables required to connect the Arduinos ended up wiping out a lot of the cost savings.
 \end{itemize}
 
-The only real downside of the Pro Mini was that it required a lot of soldering. 
+The downside of the Pro Mini was that it required a lot of soldering. 
 
 \subsection{Anchors}
-The anchors made for use with this project were made on a breadboard and based on the design by Thomas Trojer in his \code{arduino-dw1000} library. A PCB design was included with this library which allowed a DWM1000 to be used with a breadboard.
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{Figures/Anchor.jpg}
+	\decoRule
+	\caption{An anchor built on a breadboard using Thomas Trojer's PCB design \cite{ThotroGithub}. The DWM1000 is on the left, and the Arduino is on the right.}
+	\label{fig:Anchor}
+\end{figure}
+
+The anchors made for use with this project were made on a breadboard and based on the design by Thomas Trojer in his \code{arduino-dw1000} library \cite{ThotroGithub}. A PCB design was included with this library which allowed a DWM1000 to be used with a breadboard. This PCB design was used in order to quickly prototype and determine whether the DWM1000 and Arduino would be feasible and meet the requirements for the project. Four anchors were constructed using these PCBs. An anchor can be seen in Figure~\ref{fig:Anchor}.
+
+As anchors are assumed to be stationary, and the project is intended to be used indoors, it was determined that the anchors could be powered via a standard electrical outlet. Designs using batteries were considered, but as the added flexibility in placement of the anchors was of marginal benefit, and there was added complexity and maintenance required to deal with the batteries, the option was not pursued.
+
+To save costs and time, the anchors' designed stayed constant throughout the project. There was only marginal benefit to designing a PCB, as their size was mostly irrelevant and their performance would not be improved.
 
 \subsection{Tags}
-The tags made for use with this project had to be small enough to comfortably attach on a headset or cellphone.
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{Figures/PCB.png}
+	\decoRule
+	\caption{The design for the tag PCB in EAGLE.}
+	\label{fig:PCB}
+\end{figure}
 
-Several designs were considered for the PCB connecting the Arduino and DWM1000. An important factor was size. A PCB was constructed only for the tags, and anchors - which did not need to be reduced in size - were left in breadboard form in order to save costs and time. Making alterations to the PCB design to allow for a barrel jack power adapter (the only distinguishing feature between tags and anchors) would, however, have been extremely simple.
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{Figures/Tag.jpg}
+	\decoRule
+	\caption{A soldered tag.}
+	\label{fig:Tag}
+\end{figure}
+The tags made for use with this project were required to be small enough to comfortably attach on a headset or cellphone. As a breadboard was too large, a custom PCB was designed.
 
-The first design idea we tried was to place the Arduino and DWM on top of each other, resulting in the smallest possible size. See (INSERT FIGURE HERE). However, the physical dimensions of the two components made this impossible. The other possibility was to place each component on opposite sides of the PCB (INSERT FIGURE HERE), but the Arduino's design demanded breakout headers to solder it into the board, which meant the PCB had to have holes drilled. This essentially ran into the same problem as with the original.
+Several designs were considered for the PCB connecting the Arduino and DWM1000. The most important factors were size and cost.
 
-The second idea was to make two PCBs. The Arduino would connect to a PCB above it, and that PCB would connect to a board above it with the DWM1000 it. Because it was layered, the pins connecting the layers could be arranged such that the Arduino and DWM1000 were essentially above each other (but without interfering with their pins, as before). See (INSERT FIGURE). In the end, this design was abandoned because the breakout pins would add to much vertical length, it was expensive, and because it was much more complex to design.
+Several designs were considered at first:
+\begin{itemize}
+	\item The first idea considered was to place the Arduino and DWM on top of each other, resulting in the smallest possible size. However, the physical dimensions of the two components made this impossible. 
+	\item Another possibility was to place each component on opposite sides of the PCB, but the Arduino's design demanded breakout headers to solder it into the board, which meant the PCB had to have holes drilled, which again meant that the physical dimensions of the two components interfered.
+	\item Yet another idea was to make two PCBs. The Arduino would connect to a PCB above it, and that PCB would connect to a board above it with the DWM1000 soldered to it. Because it was layered, the pins connecting the layers could be arranged such that the Arduino and DWM1000 were essentially above each other, but without the locations of their pins interfering with each other. This design was abandoned because the breakout pins would add a large amount of vertical length, it was twice as expensive, and because it was much more complex to design.
+	\item The final idea considered was to have the Arduino and DWM1000 just be placed next to each other on the same side of a PCB. This design was physically realizable, the least expensive, and though it was not as compact as would be ideal, it was still relatively small.
+\end{itemize}
 
-As such, the end design required the Arduino and DWM1000 to be spread out over the board, resulting in the PCB being quite long and narrow. The PCB design was done in Eagle and ordered from PCBWay. The result can be seen in (INSERT FIGURE).
+The last idea was chosen due to the its cheap cost, simplicity of design, and satisfactory size. 
+
+As others who had used the DWM1000 recommended it \cite{LPSMini}, the PCB was designed so the antenna would not be on the PCB.
+
+The PCB design was done in EAGLE and ordered from PCBWay. The PCB design can be seen in Figure~\ref{fig:PCB} and a soldered tag can be seen in Figure~\ref{fig:Tag}.
 
 \section{Arduino Software}
 The software to control the DWM1000 was written in C++ in Arduino IDE. The basic code to control the DWM1000 (handling memory address constants, communication with it via SPI, and a few high-level functions like send/receive) was freely available in Thomas ``thotro'' Trojer's \texttt{arduino-dw1000} library. The library served as the foundation of our code to network the devices.
@@ -95,7 +133,7 @@ Adding in a fudge factor of about 200\si{\micro\second}, the delay we use in cod
 It is important to minimize this delay so to increase the maximum frequency the system can update ranges at. The tradeoff of having a short preamble versus a long one is that a long preamble means there is less chance of a transmission being missed, at the cost of using more power and taking longer to send. The value of 128 was chosen as it was the smallest possible. Tests indicated that transmissions were not being lost enough to matter with such a short preamble.
 
 \section{Calibrating}
-DWM1000s need to be calibrated to give correct distances due to the differences in hardware. There are a number of factors affecting the DWM1000, such as temperature. Some of these factors are controlled for in software in the arduino-dw1000 library. For a detailed overview of the possible errors and how to correct for them, consult the INCLUDE SOURCE HERE IT WAS A PDF ON THE SITE I READ.
+DWM1000s need to be calibrated to give correct distances due to the differences in hardware. There are a number of factors affecting the DWM1000, such as temperature. Some of these factors are controlled for in software in the arduino-dw1000 library. For a detailed overview of the possible errors and how to correct for them, the reader is advised to read the relevant sections in the DW1000 User Manual \cite{DW1000UserManual}.
 
 The primary factor which could not be controlled for by Decawave is the antenna delay. The capacitance of the hardware the DWM1000 is hooked up to can cause nanosecond-level delays in transmission (in experiments, it was found that this could cause up to several meters of error incorrectly configured). This is a constant, and is determined empirically. The antenna delay for the tags is the same and was found to be INSERT NUMBER HERE THAT WE FOUND, and the antenna delay for the anchors is roughly the same and was found to be INSERT NUMBER HERE.
 
@@ -140,38 +178,34 @@ An optimization that was considered and rejected due to time constraints was off
 
 \section{Results}
 \label{RangefindingResults}
-Results showed that the DWM1000 was close to as accurate as Decawave claimed (within 10cm). Of note, sometimes the reported ranges would glitch and be off by a meter or more. Table~\ref{tab:rangefindingAccuracy} shows the accuracy of the system. Though the accuracy of the rangefinding system was not a direct requirement of the project as a whole, the accuracy of the rangefinding system translates into accuracy of the position calculating system and thus the accuracy of the markers on the AR display.
+Results showed that the DWM1000 was close to as accurate as Decawave claimed (within 10cm). Of note, sometimes the reported ranges would glitch and be off by a meter or more. Table~\ref{tab:RangefindingAccuracy} shows the accuracy of the system. Though the accuracy of the rangefinding system was not a direct requirement of the project as a whole, the accuracy of the rangefinding system translates into accuracy of the position calculating system and thus the accuracy of the markers on the AR display.
 
 \begin{table}
-\caption{The effects of treatments X and Y on the four groups studied.}
-\label{tab:rangefindingAccuracy}
+\caption{Accuracy of the rangefinding subsystem. Experiment performed with two tags lying on the ground and a tape measure.}
+\label{tab:RangefindingAccuracy}
 \centering
 \begin{tabular}{l l l}
 \toprule
-\tabhead{Groups} & \tabhead{Treatment X} & \tabhead{Treatment Y} \\
+\tabhead{Actual Distance} & \tabhead{Reported Distance} & \tabhead{Standard Deviation} \\
 \midrule
-1 & 0.2 & 0.8\\
-2 & 0.17 & 0.7\\
-3 & 0.24 & 0.75\\
-4 & 0.68 & 0.3\\
-\bottomrule\\
+TBD & TBD & TBD \\
+\bottomrule \\
 \end{tabular}
 \end{table}
 
-The operating frequency was close to the values predicted by the theory in Section~\ref{OperatingFrequencyAnalysis}. Predicted and actual values can be found in Table~\ref{tab:rangefindingFrequency}.
+The operating frequency was close to the values predicted by the theory in Section~\ref{OperatingFrequencyAnalysis}. Predicted and actual values can be found in Table~\ref{tab:RangefindingFrequency}.
+
+The max range between nodes was not determined due to space limitations but was at least (INSERT FIGURE HERE).
 
 \begin{table}
-\caption{The effects of treatments X and Y on the four groups studied.}
-\label{tab:rangefindingFrequency}
+\caption{The frequencies of the rangefinding subsystem for various numbers of devices in the network. Experimented performed by placing an increasing number of devices in a network and calculating the duration between range reports from node 1 to node 2.}
+\label{tab:RangefindingFrequency}
 \centering
-\begin{tabular}{l l l}
+\begin{tabular}{l l}
 \toprule
-\tabhead{Groups} & \tabhead{Treatment X} & \tabhead{Treatment Y} \\
+\tabhead{Number of Devices} & \tabhead{Frequency} \\
 \midrule
-1 & 0.2 & 0.8\\
-2 & 0.17 & 0.7\\
-3 & 0.24 & 0.75\\
-4 & 0.68 & 0.3\\
+TBD & TBD \\
 \bottomrule\\
 \end{tabular}
 \end{table}
