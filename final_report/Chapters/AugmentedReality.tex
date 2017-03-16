@@ -31,7 +31,7 @@ This section covers the basics of using matrices to render 3D scenes. A full tre
 \subsection{Rotation Matrices}
 
 \subsection{Homogenous Coordinates}
-For a given 3x3 matrix $M$ and an arbitrary point in 3D space $p = (x, y, z)$, there is no $\mathbf{M}$ such that will multiplying it by any $p$ will cause $p$ to be translated by a specified number of units. There is, however, a way to do it with a homogenous point and a 4x4 matrix. This is one of the reasons homogenous coordinates are used in OpenGL.
+For a given 3$\times$3 matrix $M$ and an arbitrary point in 3D space $p = (x, y, z)$, there is no $\mathbf{M}$ such that will multiplying it by any $p$ will cause $p$ to be translated by a specified number of units. There is, however, a way to do it with a homogenous point and a 4x4 matrix. This is one of the reasons homogenous coordinates are used in OpenGL.
 
 Homogenous coordinates are coordinates in space which contain an extra element $w$ which acts as a scaling factor on the three elements. For example, a 3D homogenous coordinate $p_h$ could be written as:
 
