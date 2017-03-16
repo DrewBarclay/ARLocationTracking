@@ -1,0 +1,65 @@
+% Budget
+
+\chapter{Budget} % Main chapter title
+
+\label{Budget}
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\begin{table}
+\caption{A table listing the project expenses.}
+\label{tab:Budget}
+\centering
+\begin{tabular}{L{5cm} c c C{2cm}}
+\toprule
+\tabhead{Item} & \tabhead{Quantity} & \tabhead{Price per unit (\$)} & \tabhead{Total Price of Item (\$)} \\
+\midrule
+Pro Mini Arduino Microcontroller 3.3V$_D$ &	4	& 12.76	& 51.04 \\
+\midrule
+Wall Adapter Power Supply 5 V DC 2 A$_D$ &	4 &	7.63 &	30.52 \\
+\midrule
+2.1mm Barrel Jack Adapter - Breadboard Compatible$_D$ &	4 &	1.22 &	4.88 \\
+\midrule
+400 Tie Point Interlocking Solderless Breadboard$_D$ &	4 &	4.76 &	19.04 \\
+\midrule
+FTDI USB-to-TTL (Serial) Cable 3.3V$_D$ &	2 &	23.01 &	46.02 \\
+\midrule
+Break Away Headers - Straight$_D$ &	4 &	1.92 &	7.68 \\
+\midrule
+66 x 22 Gauge Assorted Jumper Wires$_D$ &	1 &	5.07 &	5.07 \\
+\midrule
+40 pin Breaker Header - Right Angle$_D$ &  1 &	2.50 &	2.50 \\
+\midrule
+USB-A to Micro USB Adapters$_M$ & 4 & 	6.99 &	27.96 \\
+\midrule
+DWM1000 chips (1st Order - Anchors)$_D$ &	4 &	37.96 &	151.83 \\
+\midrule
+DWM1000 chips (2nd order - Tags)$_D$ &	3 &	37.09 &	111.27 \\
+\midrule
+10K SMD Resistors$_D$	& 25 &	0.0116 &	0.29 \\
+\midrule
+Google Cardboard Headset$_M$	& 1 &	26.72 &	26.72 \\
+\midrule
+PCB (1st Order)$_D$ &	1 &	48.04 &	48.04 \\
+\midrule
+Arduino Chips (Tags and soldering parts)$_D$ &	3 &	26.56 &	79.68 \\
+\midrule
+PCBs (2nd Order)$_D$ &	2 &	20.00 &	40.00 \\
+\midrule
+& & \textbf{Duty Taxes}&			23.84 \\
+& & \textbf{Shipping}	& 33.00 \\
+& & \textbf{Taxes (Total)}	&		27.54 \\
+\midrule
+& & \textbf{Grand Total} &	736.92 \\
+
+\bottomrule\\
+\end{tabular}
+Note: D, L and M specify which group member bought which item: D for Drew, L for Llandro, M for Maricar.
+\end{table}
+
+The budget for the project can be found in Table~\ref{tab:Budget}.
+
+As a whole, the cost of the project exceeded the proposed budget of \$285. This was due to the fact that the actual cost of the DWM1000 chips were much more than expected including shipping and taxes. Also, the PCBs were made in China, which drove shipping costs up. The creation of more tags was necessary to get more data points available for the devices to pick up. It was a necessary expenditure to expand the network beyond the original four anchor tags to bring to a total of seven. In addition to spending \$276.83 out of pocket, a wondrous donation of \$175.09 from Dr. McLeod was greatly appreciated.
+
+During the compilation of all expenditures for the project, \$1.08 was not accounted for. It must have been wrong (yet very minor) calculation, or a missing cent or two in taxes. The documentation of the expenditures is something to improve on for further progress, but nothing of major importance was missing.
