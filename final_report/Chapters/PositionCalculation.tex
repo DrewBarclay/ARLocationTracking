@@ -15,6 +15,15 @@ The anchors use ultrawideband technolgy to communicate with each other and send 
 
 
 \section{High-Level Example in 2D}
+
+\begin{figure}
+	\centering
+	\input{Figures/PositionCalculationNetwork}
+	\decoRule
+	\caption{A simple example network, showing 3 anchors $a_i$ and the reported distances between them. Note that each device calculates its own range to the other devices, which will be slightly different from the range calculated on the other devices. This is not shown on the diagram.}
+	\label{fig:PositionCalculationNetwork}
+\end{figure}
+
 To start the position calculation we take three different anchors for example $a_{0}$, $ a_{1}$  and $a_{2}$. We set an arbitrary point as the origin $a_{0}$, then we proceed to make a horizontal line from $a_{0}$ to another anchor say $a_{1}$, since we have all the distances between the anchors we can now use basic trigonometry to calculate the position of our last anchor $a_{2}$,
 an example calculation is as follows:
 \\\\
