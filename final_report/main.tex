@@ -44,6 +44,8 @@ table, %for xcolor
 \usepackage[utf8]{inputenc} % Required for inputting international characters
 \usepackage[T1]{fontenc} % Output font encoding for international characters
 
+\usepackage[titletoc]{appendix}
+
 \usepackage{palatino} % Use the Palatino font by default
 
 \usepackage{textcomp} %copyright
@@ -54,7 +56,9 @@ table, %for xcolor
 
 \usepackage{tikz}
 
-\usepackage[backend=bibtex,style=authoryear,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
+\usepackage[backend=bibtex,style=ieee,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
+\usepackage{xpatch}
+ \usepackage{url}
 
 \usepackage[]{siunitx} %for SI units
 
@@ -327,6 +331,7 @@ $\omega$ & angular frequency & \si{\radian} \\
 
 \include{Chapters/Introduction}
 \include{Chapters/Rangefinding}
+\include{Chapters/RangefindingHardware}
 \include{Chapters/PositionCalculation}
 \include{Chapters/AugmentedReality}
 \include{Chapters/Conclusion}
@@ -335,20 +340,24 @@ $\omega$ & angular frequency & \si{\radian} \\
 %	THESIS CONTENT - APPENDICES
 %----------------------------------------------------------------------------------------
 
-\appendix % Cue to tell LaTeX that the following "chapters" are Appendices
+%\appendix % Cue to tell LaTeX that the following "chapters" are Appendices
 
 % Include the appendices of the thesis as separate files from the Appendices folder
 % Uncomment the lines as you write the Appendices
 
-\include{Appendices/ArduinoCode}
-\include{Appendices/AsyncProof}
+\begin{appendices}
+\input{Appendices/ArduinoCode}
+\input{Appendices/AsyncProof}
 %\include{Appendices/AppendixB}
 %\include{Appendices/AppendixC}
+\end{appendices}
 
 %----------------------------------------------------------------------------------------
 %	BIBLIOGRAPHY
 %----------------------------------------------------------------------------------------
 
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
 \printbibliography[heading=bibintoc]
 
 %----------------------------------------------------------------------------------------
