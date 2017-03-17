@@ -207,7 +207,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
             float[] tempMatrix = new float[16];
             SensorManager.getRotationMatrixFromVector(origMatrix, event.values);
 
-            //Remap based on device orientation. Note: these values are the opposite of what you might expect because the rotation matrix above is inverted.
+            //Remap based on device orientation.
             switch (mDisplay.getRotation()) {
                 case Surface.ROTATION_0:
                     SensorManager.remapCoordinateSystem(origMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Y, tempMatrix);

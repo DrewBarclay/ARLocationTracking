@@ -162,17 +162,74 @@ In order to accurately display the locations of the devices, it is important tha
 
 As previously shown in Figure~\ref{ProjectionMatrix}, the projection matrix has a field of view which can be changed. The field of view for the OpenGL perspective matrix needs to be set on a per-cellphone basis to match that of the cellphone's camera for the project to display locations accurately.
 
-\section{Cellphone Rotation}
-Discuss in detail more about how Android implements getting the rotation, the limits of it when moving + in strong magnetic fields.
+(TODO FINISH THIS UP LATER WITH MORE DETAIL IF TIME PERMITS.)
 
-\section{Billboard Effect}
-Talk about how doing the inverted view matrix multiplication causes things to always face the screen. Give pictures! Motivation here is to make 2D images that we can place in 3D space and have them face the screen.
+\section{Cellphone Rotation}
+\begin{figure}
+	\centering
+	\includegraphics[width=6cm]{Figures/AxisDevice.png}
+	\decoRule
+	\caption{The coordinate system used by the Android Sensor API \cite{AndroidSensorDocsOverview} and by AR subsystem, assuming the phone's top points towards geomagnetic North and the screen points toward the sky. For the purposes of rotation, X points approximately East, Y to geomagnetic North, and Z towards the sky \cite{AndroidSensorDocs}.}
+	\label{fig:CameraLens}
+\end{figure}
+
+In order to display the positions of markers on the screen correctly, the direction the camera is facing must be known. The cellphone can determine this by requesting the phone's rotation from Android's Sensor API. Android does not specify \emph{how} the rotation of the phone is determined, but in practice uses a subset of the magnetometer, accelerometer, and gyroscope (if the phone contains these sensors; Android does not force phone manufacturers to include any of these sensors). 
+
+For example, if the phone has a magnetometer and an accelerometer, by determining the direction of magnetic north and the direction of the force of the gravity on the phone, the direction of the phone's rotation can be determined \cite{AndroidSensorDocs}.
+
+The cellphone has its own coordinate system which must be taken into account. To deal with the coordinate system differences, the Android Sensor API includes a method to remap the coordinate system of the rotation it reports. The coordinate system used by the project for its real world coordinates was chosen to match the coordinate system of the Android Sensor API, which can be seen in Figure~\ref{fig:RotationCoordinateSystem}.
+
+The rotation value returned by the Android OS was found to be quite accurate in tests so long as the device was not in motion. If the device is in freefall or moving, it becomes more difficult for the Android OS to determine the direction of gravity, which in turn makes calculated rotation values inaccurate.
+
+The Android Sensor API can directly return a rotation matrix. However, the way it is stored in memory is not quite the same as how OpenGL stores matrices, so the matrix must be transposed before being used in OpenGL.
+
+The rotation matrix returned is used in the project to create the view matrix by taking a ``lookAt'' vector equal to $(0, 0, -1)$ (which represents that the camera, when at `rest' on a table looks down the z axis) and ``up'' vector equal to $(0, 1, 0)$ (arbitrarily stating that the `up' direction of the cellphone screen points north) and rotating each by the rotation matrix returned by the phone. The new vectors produced are then used in the OpenGL utility function \code{setLookAtM} which creates a view matrix based on an up vector and the point at which the camera should be looking at.
+
+The rotation matrix could have been used directly as the view matrix without going through these steps. However, for later processing it is necessary to have the lookAt and up vectors rotated. 
+
+Thus, if we ignore the transformation required to correct for the arbitrary coordinate system of the position calculation subsystem, the view matrix, $\mathbf{V}$, every frame is to set it equal to the rotation matrix the Android OS last returned, $\mathbf{R_cur}$:
+
+\[
+	\mathbf{V} = \mathbf{R}
+\]
+
+\section{Calibration}
+As noted in Section~\ref{FrameOfReference}, the positions calculated by the position calculation subsystem have an arbitrary coordinate system where the XY plane is formed by the positions of the three anchors with the lowest ID and the Z axis is determined by the fourth anchor. In order to display positions obtained from this subsystem accurately on top of the images captured by the cellphone's camera, there is a necessary calibration step on system startup to create a transformation matrix which can convert coordinates into the cell phone's coordinate system. The user determines the transformation needed to convert to the coordinate system used by the cellphone by rotating and positioning the phone until it displays the position of a device correctly, at which point the system knows the transformation needed.
+
+The steps a user follows to calibrate the system are:
+\begin{itemize}
+	\item The user taps the phone's screen to enter calibration mode.
+	\item The system creates a new view matrix every frame which will cause the screen to display the position of an arbitrary device in the network in the middle of the screen.
+	\item The user then points the phone directly at the tag being displayed and rotates the phone until the position of a second tag matches its location on the screen.
+	\item The user then taps the screen to end calibration mode. The system stores the view matrix at this time, $\mathbf{V}_{end}$ as well as the raw rotation matrix at the time, $\mathbf{R}_{end}$.
+	\item If the locations of other tags are incorrect due the z-axis being flipped (the z axis of the position calculation subsystem flips based on the elevation of the anchor with the highest ID), the user taps the phone's screen twice to correct it. The system stores this in a boolean and, when calculating the positions of other devices relative to the user's location, knows whether to flip the z component.
+\end{itemize}
+
+(TODO INSERT PICTURE HERE)
+
+Each frame, to correctly position the objects, the calibration matrix should be changed only by the rotation of the device from its rotation at the end of the calibration. Before, each frame the view matrix was set equal to the current raw rotation matrix, $\mathbf{R}_{cur}$. Now, the view matrix must multiplied by a matrix to correct for the coordinate transform. Intuitively, this calibration matrix should reverse the effects of the rotation at the end of the calibration mode and multiply by the view matrix at the time. A rotation can be reversed by inverting the matrix. Thus, the new calibrated view matrix used every frame, $\mathbf{V}_{cal}$, is:
+
+\[ 
+	\mathbf{V}_{cal} = \mathbf{V}_{end} \mathbf{R}^{-1}_{end} \mathbf{R}_{cur}
+\]
+
+\section{Billboarding}
+So far, this chapter has discussed how a collection of vertices can be transformed, and more specifically how the positions of other devices can be correctly placed. This would be acceptable if the system had to render a cube at the position of the object in question. Aesthetically, rendering a cube would leave a lot to be desired. This section covers a method to draw a 2D image at a 3D location.
+
+\textbf{Billboarding} is a technique to make an object face the screen no matter where it is situated. It is used, for example, in some 3D games to render trees as 2D images to lower the number of vertices that need to be processed in a scene. Figure~\ref{fig:Billboarding} shows an example of the technique.
+
+There are many ways to do billboarding, depending on whether you want to only have the object rotate on a specific axis \cite{Lighthouse3D}. For this project, it was determined that the best way to represent an object's position on the screen was to have a rotating circular 2D image as a marker. The exact graphic used was chosen for aesthetic reasons.
+
+To have this 2D image always face the screen, it must be able to rotate on all three axes. The technique to accomplish this rotation is to multiply the model matrix before it is translated by the inverse of the portion of the view matrix corresponding to rotation. That is, given a model matrix $\textbf{M}$, making it rotate to always face the camera is accomplished by creating a new billboarding matrix $\textbf{M}_b$:
+
+
+
+Intuitively, when a model's vertices are multiplied by the view matrix, they are rotated about depending on the angle the camera is facing. If we reverse this rotation effect but not the translation part, the model will always face the camera.
+
+As the camera is always situated at $(0, 0, 0)$ in this project, multiplying the model matrix of the textured square by the inverted view matrix will produce a billboarding effect. If we first rotate the square about the Z-axis (assuming the square's vertices are on the XY plane), it will produce the rotating effect on the final image.
 
 \section{HUD}
 Go over how the HUD is made. (Still need to finish that too so we can get pictures.)
-
-\section{Calibration}
-Talk about how we can take the cellphone's rotation matrix and calibrate the positions we calculate from anchors/tags.
 
 \section{Results}
 Show off how accurate we are. Have Youtube videos displaying such.
