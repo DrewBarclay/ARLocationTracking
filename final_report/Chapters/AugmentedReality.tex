@@ -234,6 +234,7 @@ Thus, if we ignore the transformation required to correct for the arbitrary coor
 \]
 
 \section{Calibration}
+\label{Calibration}
 As noted in Section~\ref{FrameOfReference}, the positions calculated by the position calculation subsystem have an arbitrary coordinate system where the XY plane is formed by the positions of the three anchors with the lowest ID and the Z axis is determined by the fourth anchor. In order to display positions obtained from this subsystem accurately on top of the images captured by the cellphone's camera, there is a necessary calibration step on system startup to create a transformation matrix which can convert coordinates into the cell phone's coordinate system. The user determines the transformation needed to convert to the coordinate system used by the cellphone by rotating and positioning the phone until it displays the position of a device correctly, at which point the system knows the transformation needed.
 
 The steps a user follows to calibrate the system are:

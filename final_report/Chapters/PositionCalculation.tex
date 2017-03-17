@@ -7,11 +7,31 @@
 
 %----------------------------------------------------------------------------------------
 
-\section{Overview}
-%Talk about the goal of this section: to calculate positions of objects given the ranges between them. Talk about how Arduinos and Androids are connected by FTDI.
+This chapter covers the position calculation subsystem, which takes the ranges from the rangefinding subsystem and calculates their positions. It also covers how the subsystem is integrated into the augmented reality subsystem. The position subsystem is not a separate piece of hardware. Rather, it is just a very complex mathematical function. An example of possible positions calculated from range data is shown in Figure~\ref{fig:FrameOfReference}.
 
-Our location tracking system consists of two different anchors, anchors and tags. The anchors which we can think of as static anchors doing the postion tracking, and the tags which are our dynamic anchors that we need to track. The overall goal of this subsystem is to calculate the position of each anchor given only the distances from one another.
-The anchors use ultrawideband technolgy to communicate with each other and send the position data to our android application using FTDI.
+The topics covered in this chapter are:
+\begin{enumerate}
+	\item The infinite possible positions able to be calculated from a set of ranges.
+	\item A high-level example of calculating positions with basic trigonometry in 2D.
+	\item How this is extended to 3D.
+	\item The protocol used by the Arduinos to communicate with the cell phones of the users and transfer the ranging data.
+\end{enumerate}
+
+\section{Frame of Reference}
+\label{FrameOfReference}
+\begin{figure}
+	\centering
+	\input{Figures/ExamplePositions}
+	\decoRule
+	\caption{Two example networks with different positions reporting the same ranges.}
+	\label{fig:FrameOfReference}
+\end{figure}
+
+One of the most important aspects to understanding the position of an object in space is knowing what it is \emph{relative} to. If a point $p = (x, y, z) = (1, 2, 3)$, this is not useful unless it is known where, say, $(0, 0, 0)$ is and what directions the various axes point in.
+
+The rangefinding subsystem determines the ranges between various devices. With these ranges, we can use trigonometry and determine positions in 3D space. However, it is impossible to place the positions in such a way that they correspond to the real world with only the range information. There are many different possible sets of positions which will result in the same rangefinding data. Figure~\ref{fig:FrameOfReference} shows two possible sets of positions that will result in the rangefinding system reporting the same ranges.
+
+In order to cut down on the infinite possible solutions to finding positions given only range data, this subsystem must arbitrarily create its own system of coordinates. The positions calculated by this subsystem must be further transformed so as to correspond to the real world. This transformation is not covered in this chapter, and instead is dealt with in Section~\ref{Calibration}.
 
 \section{High-Level Example in 2D}
 
@@ -19,21 +39,20 @@ The anchors use ultrawideband technolgy to communicate with each other and send 
 	\centering
 	\input{Figures/PositionCalculationNetwork}
 	\decoRule
-	\caption{A simple example network, showing 3 anchors $a_i$ and the reported distances between them. Note that each device calculates its own range to the other devices, which will be slightly different from the range calculated on the other devices. This is not shown on the diagram.}
+	\caption{A network with 3 anchors $a_i$ and the reported distances between them.}
 	\label{fig:PositionCalculationNetwork}
 \end{figure}
 
-To start the position calculation we take three different anchors for example $a_{0}$, $ a_{1}$  and $a_{2}$. We set an arbitrary point as the origin $a_{0}$, then we proceed to make a horizontal line from $a_{0}$ to another anchor say $a_{1}$, since we have all the distances between the anchors we can now use basic trigonometry to calculate the position of our last anchor $a_{2}$,
-an example calculation is as follows:
-\\\\
-distance from anchor x to anchor y: $d_{xy}$, we use cosine law to determine the angle
-\\
-\[ \Theta = \cos ^{ - 1}\Big(\frac{d_{01}^2 + d_{02}^2 - d_{12}^2 }{2 d_{01} d_{02}}\Big)\]
-\\
-when we have the angle we can now calculate the x and y coordinates:
-\\
-\[ x_2 = cos(\Theta) d_{12} \]
-\[ y_2 = sin(\Theta) d_{12} \]
+As 3D position calculation is much more complex, position calculation is done in 2D will be explained first. We start with the distances between three anchors, $a_{0}$, $ a_{1}$  and $a_{2}$. The distance between anchor $i$ and anchor $j$ is $d_{ij}$. 
+
+In order to assign positions in 2D space to them that keep them the same ranges from each other, we start by setting $a_{0}$ arbitrarily to be at the origin. Next, we arbitrarily declare $a_{1}$ to be on the x-axis, which puts it at the position $(0, d_{01})$. With these two positions, we can calculate the angle $\Theta$ between the x-axis and the vector from $a_0$ to $a_2$ with the cosine law:
+
+\[ \Theta = \cos ^{-1}\Big(\frac{d_{01}^2 + d_{02}^2 - d_{12}^2 }{2 d_{01} d_{02}}\Big)\]
+
+With $\Theta$, we can calculate x and y coordinates of $a_2$:
+
+\[ x = cos(\Theta) d_{12} \]
+\[ y = sin(\Theta) d_{12} \]
 
 \section{Extending This to 3D}
 Extending the subsystem to three dimensions does not really change the calculation all that much except that we now need four anchors to get a reliable position in three dimensions. We have our four anchors: $a_{0}$, $a_{1}$ , $a_{2}$ and $a_{3}$, we arbitrarily set one as the origin $a_{0}$(0, 0, 0) and we now make a horizontal line to another anchor say $a_{1}$ and since we know the distance between these two anchors we can get the position to be $a_{1}$(0, $d_{01}$, 0), where $d_{01}$ is the distance between $a_{0}$ and $a_{1}$. We can now form a triangle with the third anchor and use cosine law to determine the position and we arbitrarily set the z value to 0.
@@ -58,15 +77,34 @@ Now that we have $\Delta x$ we can now calculate the position of our fourth anch
 \[ y_{3} = cos(\Theta) y_{temp} \]
 \[ z_{3} = sin(\Theta) y_{temp} \]
 
+\section{Integrating Rangefinding and Position Calculation}
+The position calculation code runs on the cellphone. In order to calculate positions, ranges must be transferred to the cellphone from the Arduino Pro Mini. 
 
-\section{Frame of Reference}
-\label{FrameOfReference}
-The positions calculated from ranges do not correspond to the real world! We must use the cellphones' accelerometer (for gravity) and magnetic sensor (for compass direction/inclination) to map these positions to reality.
+The Arduino's processor can communicate serially via UART TTL. Most cellphones do not have the ability to communicate serially, but Future Technology Devices International (FTDI) manufactures a USB cable that interfaces between the serial output of the Arduino and the micro USB port of a cellphone. With this cable connecting an Arduino and a cellphone, the cellphone can provide power to the Arduino and send and receive data to it.
 
-Go over how this is done.
+The project uses the Android \code{D2xx} library, provided by FTDI, to communicate with the Arduino while running an Android app. It allows the easy sending and receiving of bytes. 
 
-\section{Getting the Ranges}
-Talk about FTDI and our protocol to communicate from Arduino to Android. Go over how they are parsed (put in appendix of parsing code)
+\section{Protocol}
+There are a number of design considerations when dealing with the communications between the cellphone and the Arduino:
+\begin{enumerate}
+	\item The stream of data may begin in the middle of a message, as the buffer storing the serial data sent from the Arduino has only a limited capacity. If a cellphone were connected to an anchor that had already been running for some time, it is quite likely that the buffer would have overflowed. So, the protocol must include a way to determine the start of a message.
+	\item The protocol should be human readable for easy debugging.
+	\item The protocol should use a minimum of data, as transmitting the bytes from the Arduino takes processing power that could be better spent on the rangefinding code.
+\end{enumerate}
 
-\section{Conclusion}
-This subsystem calculates positions; we figured out how ranges are obtained, how they are calculated. Go over this in more detail.
+With this in mind, a simple protocol was developed. Lines of text, delineated by newline characters, are sent. If the Arduino is reporting the range between two devices, it sends a line with the format:
+
+\begin{center}
+\code{!r <from ID> <to ID> <range>}
+\end{center}
+
+If the cellphone reads a line which does not start with ``!r'', the line is assumed to either have started in the middle of a ranging information line, or else debug data has been sent. Either way, the line is discarded and the system waits to read a new line.
+
+An example log might read as:
+
+(INSERT THIS LATER)
+
+Parsing is done on the cellphone with the \code{java.util.Scanner} class. The parsing code can be found in (INSERT THIS LATER).
+
+\section{Summary}
+This chapter covered the issues with the infinite possible positions that can be calculated from a set of ranges between nodes, the math behind calculating positions in 3D given ranges, and how the cellphones and Arduinos are interfaced.
