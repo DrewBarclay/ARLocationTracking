@@ -97,7 +97,14 @@ With this in mind, a simple protocol was developed. Lines of text, delineated by
 \code{!range <from ID> <to ID> <range in meters>}
 \end{center}
 
-If the cellphone reads a line which does not start with ``!r'', the line is assumed to either have started in the middle of a ranging information line, or else debug data has been sent. Either way, the line is discarded and the system waits to read a new line.
+If the Arduino is informing the cellphone of its id, it sends a line with the format:
+
+\begin{center}
+\code{!id <tag's ID>}
+\end{center}
+
+
+If the cellphone reads a line which does not start with `!', the line is assumed to either have started in the middle of a ranging information line, or else debug data has been sent. Either way, the line is discarded and the system waits to read a new line.
 
 An example of the output from the Arduino is:
 

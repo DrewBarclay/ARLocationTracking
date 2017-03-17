@@ -135,9 +135,9 @@ It is important to minimize this delay so to increase the maximum frequency the 
 \section{Calibrating}
 DWM1000s need to be calibrated to give correct distances due to the differences in hardware. There are a number of factors affecting the DWM1000, such as temperature. Some of these factors are controlled for in software in the arduino-dw1000 library. For a detailed overview of the possible errors and how to correct for them, the reader is advised to read the relevant sections in the DW1000 User Manual \cite{DW1000UserManual}.
 
-The primary factor which could not be controlled for by Decawave is the antenna delay. The capacitance of the hardware the DWM1000 is hooked up to can cause nanosecond-level delays in transmission (in experiments, it was found that this could cause up to several meters of error incorrectly configured). This is a constant, and is determined empirically. The antenna delay for the tags is the same and was found to be INSERT NUMBER HERE THAT WE FOUND, and the antenna delay for the anchors is roughly the same and was found to be INSERT NUMBER HERE.
+The primary factor which could not be controlled for by Decawave is the antenna delay. The capacitance of the hardware the DWM1000 is hooked up to can cause nanosecond-level delays in transmission (in experiments, it was found that this could cause up to several meters of error incorrectly configured). This is a constant, and is determined empirically. The antenna delay constan for the tags is roughly the same and was found to be 16470, and the antenna delay for the anchors is roughly the same and was found to be INSERT NUMBER HERE.
 
-These constants required a slight tweak to the DWM1000 library. INSERT LINK TO SOURCE CODE OF OUR CHANGED VERSION HERE.
+Changing the antenna delay in the main code required a slight tweak to the arduino-dw1000 library. A link to the code can be found in Appendix~\ref{ArduinoCode}.
 
 \section{Operating Frequency Analysis}
 \label{OperatingFrequencyAnalysis}
@@ -181,7 +181,7 @@ An optimization that was considered and rejected due to time constraints was off
 Results showed that the DWM1000 was close to as accurate as Decawave claimed (within 10cm). Of note, sometimes the reported ranges would glitch and be off by a meter or more. Table~\ref{tab:RangefindingAccuracy} shows the accuracy of the system. Though the accuracy of the rangefinding system was not a direct requirement of the project as a whole, the accuracy of the rangefinding system translates into accuracy of the position calculating system and thus the accuracy of the markers on the AR display.
 
 \begin{table}
-\caption{Accuracy of the rangefinding subsystem. Experiment performed with two tags lying on the ground and a tape measure.}
+\caption{Accuracy of the rangefinding subsystem. Experiment performed with a tape measur and two tags lying on the ground. Antenna delay 16470.}
 \label{tab:RangefindingAccuracy}
 \centering
 \begin{tabular}{c c c}

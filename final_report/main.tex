@@ -59,8 +59,13 @@ table, %for xcolor
 \usepackage[backend=bibtex,style=ieee,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
 \usepackage{xpatch}
  \usepackage{url}
+ 
+ \usepackage{tabu}
 
 \usepackage[]{siunitx} %for SI units
+
+\usepackage{array} % for defining a new column type
+\usepackage{varwidth} %for the varwidth minipage environment
 
 \addbibresource{main.bib} % The filename of the bibliography
 
@@ -185,15 +190,15 @@ table, %for xcolor
 \begin{abstract}
 \addchaptertocentry{\abstractname} % Add the abstract to the table of contents
 
-Realising augemented reality as an emerging technology, we began exploring technologies that could be integrated to make practical applications.
-Taking inspiration from modern military shooters we came up with the idea of location tracking integrated with augmented reality, the ability to know the positions of objects and people displayed in a convienient
-heads up display was appealing to us.
-We set out to make a proof of concept using the android platform as the basis for our augmented reality, arduinos and ultrawide band technologies for our location tracking. Our ranging system consists of nodes in
-a network, each of which is capable of sending and recieving wireless signals which we use to determine the distances from each node.
-The system uses an ultrawide band transciever, the Decawave DWM1000 integrated into an Arduino pro mini to determine the distances from node to node.
-We utilize custom position calculation code and ranging data from the transcievers to determine the actual position of the node in real time.
-Finally our system uses this position data and sends it to an android application to display node locations on screen. Our success in integrating location tracking with augmented reality proved our concept and can be
-applied to various applications.
+Virtual reality technology has lowering in cost and growing in popularity in recent years. This project uses a variant on virtual reality, augmented reality, to show the locations of tracked objects on an Android cellphone on top of images captured by the cellphone's camera.
+
+The project allow the user to know whether a tracked object is to the left, right, or behind them, which would be useful in, for example, a military context for tracking the locations of fellow soldiers.
+
+A proof of concept is presented which allows for accurate tracking in an in-door location. The system is composed of Decawave DW1000 ultra-wideband transceivers and Arduino Pro Mini microcontrollers forming a network of distance sensors, and Android cellphones running an augmented reality app created for the project. 
+
+Distances between objects are determined via time-of-flight measurements between a number of devices in a network. Trigonometry allows these distances to be turned into positions in 3D space. OpenGL is used to render these images on the cellphone screen in real time.
+
+The system allows for distance determinations accurate to within 50 centimeters. Positions rendered on the augmented reality display, after calibration, can be similarly accurate.
 
 \end{abstract}
 
@@ -282,36 +287,34 @@ There were three main facets to the technical side of the project: rangefinding,
 %	ABBREVIATIONS
 %----------------------------------------------------------------------------------------
 
-\begin{abbreviations}{ll} % Include a list of abbreviations (a table of two columns)
+\addchap{\abbrevname}
 
-\textbf{PCB} & Printed circuit board. \\
-\textbf{UWB} & Ultra-wideband. A type of radio technology. \\
-
-\end{abbreviations}
-
-\textbf{Anchor} - a stationary point used to triangulate a user’s location\\
-\textbf{Billboarding} - technique used to mak an object face the screen no matter where it is situated\\
-\textbf{Graphical User Interface (GUI)} - a visual interface which allows the user to see the process’ current task \\
-\textbf{Heads Up Display (HUD)} - a type of GUI which displays information to the user, done without the use of a screen\\
-\textbf{Homogenous coordinates} - coordinates in space which contains an extra element w which is a scaling factor on the three elements\\
-\textbf{Model Matrix (M)} - a matrix containing the coordinates in the model space\\
-\textbf{Model space} - space relative to the center of the object\\
-\textbf{Nodes} - points in the network which show interaction between each other\\
-\textbf{Normalized device coordinates (NDC)} - coordinates transformed from a 3D space to a 2D space\\
-\textbf{Open GL} - an API used to render 2D and 3D graphics\\
-\textbf{Perspective projection matrix} - A matrix which accounts for how objects are far away from the camera\\
-\textbf{Projection Matrix} - a matrix containing the coordinates in the projection space\\
-\textbf{Projection space} - Space viewed within the view of the camera\\
-\textbf{Rotation Matrix ( R)} - the matrix containing the angles of orientation of an object\\
-\textbf{Tag} - a mobile point to represent the user(s)\\
-\textbf{Time of flight (TOF)} - a method used to calculate range using the time it takes to receive and send a signal\\
-\textbf{Transformation Matrices} - matrices that are involved in the scaling, translation (movement in the space) and rotation of an object\\
-\textbf{Translation matrix (T)} - the matrix containing the movement of an object in the space\\
-\textbf{Ultrawide Broadband (UWB)} - a type of radio technology\\
-\textbf{View Matrix (V)} - a matrix containing the coordinates in the view space\\
-\textbf{View space} - Space relative to the position to which the scene is viewed\\
-\textbf{World Space} - space relative to the world in which the object resides\\
-
+\renewcommand\arraystretch{1.213}
+\begin{longtable}{p{6cm} p{7cm}} 
+\textbf{Anchor} & A stationary device used as a part of a network of similar devices to triangulate a user's location \\
+\textbf{Billboarding} & Technique used in 3D graphics to make an object face the camera\\
+\textbf{Graphical User Interface (GUI)} & A visual interface which allows the user to interact with and know the state of a system \\
+\textbf{Heads Up Display (HUD)} & A type of GUI which displays information to the user without the use of a dedicated screen\\
+\textbf{Homogenous Coordinates} & An extension of coordinates which includes an extra component, $w$, which acts as a scaling factor on the other components of the coordinate\\
+\textbf{Model Matrix} & A matrix used to transform the vertices of a 3D model from model space to world space. In equations, a model matrix usually uses the $\mathbf{M}$ symbol \\
+\textbf{Model Space} & A coordinate system relative to the center of a 3D object\\
+\textbf{Nodes} & Devices in a network, in this project either anchors or tags\\
+\textbf{Normalized Device Coordinates (NDC)} & Coordinates transformed from world space to projection space and scaled such that all vertices of 3D objects visible to the camera will be contained within a cube from $(-1, -1, -1)$ to $(1, 1, 1)$\\
+\textbf{OpenGL} & An API used to render 2D and 3D graphics\\
+\textbf{Perspective Projection Matrix} & A type of projection matrix which mimics the human eye and will scale farther away objects so to they seem smaller\\
+\textbf{Printed Circuit Board (PCB)} & A board with etched copper wires used in the construction of some electronics. \\
+\textbf{Projection Matrix} & A matrix which can be used to transform coordinates in world space to projection space\\
+\textbf{Projection Space} & A coordinate system relative to the center of the device's screen\\
+\textbf{Rotation Matrix} & A transformation matrix which can rotate vectors a specified angle around any combination of axes, usually using the $\mathbf{R}$ symbol in equations\\
+\textbf{Tag} & A mobile device, connected to the user's cellphone in this project, used as part of a network of similar devices to triangulate a user's location\\
+\textbf{Time of Flight (TOF)} & A method used to calculate the distance between objects using the time it takes a signal to propogate between the the objects\\
+\textbf{Transformation Matrices} & Matrices that are used to transform vectors in 3D space, usually involving scaling, translation (movement in the space), and rotation\\
+\textbf{Translation Matrix} & The transformation matrix which can be used to move a vector in space in a specified direction and distance\\
+\textbf{Ultra-wideband (UWB)} & A type of radio technology useful in indoor ranging applications\\
+\textbf{View Matrix} & A matrix used to transform coordinates in world space to view space\\
+\textbf{View Space} & A coordinate system relative to the point at which the 3D scene is viewed from\\
+\textbf{World Space} & A coordinate system relative to the 3D scene as a whole, similar to a coordinate system for the real world\\
+\end{longtable}
 
 
 %----------------------------------------------------------------------------------------
