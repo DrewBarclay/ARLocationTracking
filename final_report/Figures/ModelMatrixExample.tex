@@ -1,0 +1,28 @@
+\tikzstyle{vertex}=[circle, draw]
+\begin{tikzpicture}[transform shape={scale=0.4}]
+\draw[->,ultra thick] (0,0, 0)--(5,0, 0) node[right]{$x$};
+\draw[->,ultra thick] (0,0, 0)--(0,5, 0) node[above]{$y$};
+\draw[->,ultra thick] (0,0, 0)--(0,0, 5) node[below left]{$z$};
+
+\node[vertex,inner sep=2pt,minimum size=1pt,label=below:{$(-6, -1, 0)$}](v1) at (-6, -1, 0) {};
+\node[vertex,inner sep=2pt,minimum size=1pt,label=below right:{$(-4, -1, 0)$}](v2) at (-4, -1, 0) {};
+\node[vertex,inner sep=2pt,minimum size=1pt,label=above right:{$(-4, 1, 0)$}](v3) at (-4, 1, 0) {};
+\node[vertex,inner sep=2pt,minimum size=1pt,label=above:{$(-6, 1, 0)$}](v4) at (-6,1, 0) {};
+
+\node[vertex,inner sep=2pt,minimum size=1pt,label=left:{$(4, -1, 0)$}](v5) at (4, -1, 0) {};
+\node[vertex,inner sep=2pt,minimum size=1pt,label=below right:{$(6, -1, 0)$}](v6) at (6, -1, 0) {};
+\node[vertex,inner sep=2pt,minimum size=1pt,label=above right:{$(6, 1, 0)$}](v7) at (6, 1, 0) {};
+\node[vertex,inner sep=2pt,minimum size=1pt,label=above left:{$(4, 1, 0)$}](v8) at (4,1, 0) {};
+
+\begin{scope}[every path/.style={-}, every node/.style={inner sep=0pt}]
+       \draw (v1) -- node [anchor=south east] {} (v2);
+       \draw (v2) -- node [anchor=south west] {} (v3);
+       \draw (v3) -- node [anchor=north] {} (v4);
+       \draw (v4) -- node [anchor=north] {} (v1);
+       
+       \draw (v5) -- node [anchor=south east] {} (v6);
+       \draw (v6) -- node [anchor=south west] {} (v7);
+       \draw (v7) -- node [anchor=north] {} (v8);
+       \draw (v8) -- node [anchor=north] {} (v5);
+\end{scope} 
+\end{tikzpicture}
