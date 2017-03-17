@@ -1,5 +1,6 @@
 package g20capstone.cameratest;
 
+import android.util.Log;
 import android.util.Pair;
 
 import java.util.HashMap;
@@ -18,7 +19,7 @@ public class TagParser {
     private String data = "";
     public int ourId = 0;
 
-    public void addString(String newData) {
+    public synchronized void addString(String newData) {
         data += newData;
         String[] lines = data.split("\n");
         for (int i = 0; i < lines.length - 1; i++) {
@@ -37,16 +38,32 @@ public class TagParser {
                 int id1 = sc.nextInt();
                 int id2 = sc.nextInt();
                 float range = sc.nextFloat();
-                ranges.put(Pair.create(id1, id2), range);
+                //Sanity check it...
+                if (range > -1f && range < 1000f) {
+                    if (ranges.containsKey(Pair.create(id1, id2))) {
+                        float oldRange = ranges.get(Pair.create(id1, id2));
+                        float newRange = oldRange * 0.7f + range * 0.3f;
+                        ranges.put(Pair.create(id1, id2), newRange);
+                        ranges.put(Pair.create(id2, id1), newRange);
+                    } else {
+                        ranges.put(Pair.create(id1, id2), range);
+                        ranges.put(Pair.create(id2, id1), range);
+                    }
+                    Log.d("TagParser", "" + id1 + " " + id2 + " " + range);
+                }
+            } else if (prefix.equals("!id")) {
+                int id = sc.nextInt();
+                ourId = id;
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return;
         }
     }
 
-    public HashMap<Integer, Point3D> getPositions() {
+    public synchronized HashMap<Integer, Point3D> getPositions() {
         //Debug code:
-        if (true) {
+        if (false) {
             HashMap<Integer, Point3D> debugPos = new HashMap<>();
             debugPos.put(0, new Point3D(0, 0, 0));
             debugPos.put(1, new Point3D(5, 5, 0));
@@ -67,7 +84,7 @@ public class TagParser {
 
         float[][] distances = new float[ss.size()][ss.size()];
         if (distances.length < 4) {
-            return null; //not enough points
+            return new HashMap<>(); //not enough points
         }
 
         HashMap<Integer, Integer> idToIndex = new HashMap<>();

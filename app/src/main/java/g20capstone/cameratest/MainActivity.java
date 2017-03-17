@@ -16,6 +16,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
+import android.os.Process;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MotionEventCompat;
@@ -100,11 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
         new Thread(new Runnable() {
             public void run() {
+                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
                 while (true) {
                     FT_Device ftd = mTagManager.getFtDevice();
 
                     if (ftd != null && ftd.isOpen()) {
-                        byte[] buffer = new byte[1024];
+                        byte[] buffer = new byte[64];
                         int len;
                         try {
                             len = ftd.read(buffer);
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if (len > 0) {
                             final String text = new String(buffer, 0, len);
-                            Log.d("Runnable", "Read bytes: " + text);
+                            //Log.d("Runnable", "Read bytes: " + text);
 
                             mTagParser.addString(text);
                             String s = "";

@@ -57,6 +57,9 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     private boolean mCalibrating = false;
 
+    private long mPositionTimer;
+    private Map<Integer, Point3D> positions;
+
     public ARRenderer(Activity context, SensorManager sensorManager, Display display, TagParser tagParser) {
         mContext = context;
         mDisplay = display;
@@ -64,6 +67,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         mRotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mTagParser = tagParser;
         Matrix.setIdentityM(mRotationCalibrationMatrix, 0);
+        mPositionTimer = System.nanoTime();
     }
 
     public void onResume() {
@@ -100,8 +104,24 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        Map<Integer, Point3D> positions = mTagParser.getPositions();
-        Point3D ourPos = positions.get(mTagParser.ourId);
+        //Every 50 ms...
+        if (System.nanoTime() - mPositionTimer > 50e-3*1e9) {
+            Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
+            if (possiblePositions != null) {
+                boolean valid = true;
+                for (Map.Entry<Integer, Point3D> e : possiblePositions.entrySet()) {
+                    Point3D p = e.getValue();
+                    if (Math.abs(p.x) > 1000 || Math.abs(p.y) > 1000 || Math.abs(p.z) > 1000) {
+                        valid = false;
+                    }
+                }
+                if (valid && possiblePositions != null && possiblePositions.size() > 0) {
+                    mPositionTimer = System.nanoTime();
+                    positions = possiblePositions;
+                }
+            }
+        }
+        Point3D ourPos = (positions != null) ? (positions.get(mTagParser.ourId)) : (null);
 
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
