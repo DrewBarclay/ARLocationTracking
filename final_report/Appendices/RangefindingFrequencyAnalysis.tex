@@ -1,0 +1,37 @@
+\chapter{Operating Frequency Analysis}
+\label{OperatingFrequencyAnalysis}
+
+In order to estimate the operating frequency of the rangefinding subsystem -- that is, how many times we can get the range from all devices to a single device per second\footnote{It should be noted that this definition of operating frequency is somewhat misleading and calculates a minimum operating frequency. Because each pair of devices compute their range twice, once on each device at different points in the round, the true operating frequency of the system will be higher on average. The analysis here does not take this into account. 
+
+In the best case scenario, this will almost double the system frequency. In the worst case scenario, where two devices are next to each other in the transmission order in a large network, the system operating frequency will barely increase. The figures given for operating frequencies will thus give a range from the minimum by the definition here to twice it.} -- we see that the frequency will be the inverse of the time taken to complete one round (the system performs one range update per device per round), assuming no lost transmissions. That is,
+
+\[
+ 	f_{op} = \frac{1}{T_{round}}
+\]
+
+The time it takes a round is equal to the time it takes the devices to each parse a received message and transmit a message. Determining the time it takes to transmit a message is a little tricky to calculate due to the requirement to include the delay before the message is sent. A rough estimate of the time it takes to do a round of transmissions is:
+
+\[
+	T_{round} =  N(T_{device} + T_{prop}) + T_{end}
+\]
+where $N$ is the number of nodes in the network (the 4 anchors and 3 tags that were made make 7), $T_{device}$ is the time it takes a device to fully receive and transmit, $T_{prop}$ is the time it takes the message propogate (this will not be constant, but it is so small as to be ignorable in this analysis), and $T_{end}$ is the duration of the pause at the end of the round. 
+
+We can estimate $T_{device}$ as
+
+\[
+	T_{device} \approx T_{rx} + T_{tx} + T_{txDelay} + NT_{addedNode}
+\]
+where $T_{rx}$ is the time it takes to parse a received message (7-8 ms empirically), $T_{tx}$ is the time it takes to create the packet to send to the DWM1000 (1-2 ms empirically), $T_{txDelay}$ is the delay before the ranging packet can be sent (calculated in Section~\ref{CalculatingADelay}, about 3500 \si{\micro\second}), and $T_{addedNode}$ is the amount of extra time it takes the network to transmit and receive messages per added node (empirically determined to be about 2000\si{\micro\second}).
+
+$T_{end}$ is implemented in the code as a dummy device which the network will never receive a message for, allowing it to expire. Perhaps unintuitively, it is not actually equal to the time it takes a normal device to be rejected. This is because, when the round ends, it will not have transmitted anything, meaning that the time it takes to parse a received message will be 0 from it and the next round will start as soon as the first device in the transmission order array can transmit. $T_{end}$, then, is about equal to $T_{device} - T{rx}$.
+
+Putting it all together, the equation estimating the operating frequency of the system is:
+\[
+	T_{round} \approx (N+1)(T_{rx} + T_{tx} + T_{txDelay} + NT_{addedNode}) - T_{rx}
+\]
+
+Plugging the above numbers into the equation, we find we should expect that a network composed of 2 devices can operate at a frequency of about 23Hz and a network of 7 devices can operate at about 4.7Hz. These estimates are quite close to the empirical measurements made (see Section~\ref{RangefindingResults}).
+
+As can be seen from the equations, the system is primarily bottlenecked by the speed at which messages can be processed and transmitted. These numbers are above the minimum requirements for the system, but they are below an ideal 60Hz, at which point the updates would be so smooth as to seem mostly continuous to the human eye and there would be marginal benefit to improving the frequency. Originally, it was thought that the Arduino's speed would not matter, but this turned out to not be the case. Future work on this project would benefit from finding a microcontroller an order of magnitude faster. 
+
+An optimization that was considered and rejected due to time constraints was offloading only the time-of-flight calculation to the cell phones, instead transmitting timestamps instead of calculated ranges in the ranging packets. The Arduino Pro Mini was found to take roughly 1ms to calculate each range (minus the extra time transmitting more data takes). Implementing this would barely increase the operating frequency of the system, so it was not implemented.

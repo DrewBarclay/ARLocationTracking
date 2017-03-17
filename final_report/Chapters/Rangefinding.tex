@@ -1,17 +1,17 @@
 % Rangefinding
 
-\chapter{Determining Ranges} % Main chapter title
+\chapter{Rangefinding} % Main chapter title
 
 \label{Rangefinding}
 
 %----------------------------------------------------------------------------------------
 
-This chapter covers the rangefinding subsystem, the part of the project which determines the ranges between two sensors. The ranges are later fed into the position calculation subsystem, which determines the positions of the sensors in 3D space.
+This chapter covers the rangefinding subsystem, the subset of the project which determines the distances (ranges) between two sensors. The ranges are later fed into the position calculation subsystem, which determines the positions of the sensors in 3D space.
 
 This chapter covers three main topics:
 \begin{enumerate}
-	\item A description of what the rangefinding system does, and the devices composing it.
-	\item The math behind calculating the range between two sensors.
+	\item A description of what the rangefinding system does and the devices it is made of.
+	\item The math behind calculating the distance between two sensors.
 	\item A description of the networking protocol developed for this project.
 \end{enumerate}
 
@@ -20,7 +20,7 @@ This chapter covers three main topics:
 	\centering
 	\input{Figures/ExampleNetwork}
 	\decoRule
-	\caption{An example network, showing 1 tag $t_1$ and 3 anchors $a_i$ and the reported distances between them. Note that each device calculates its own range to the other devices, which will be slightly different from the range calculated on the other devices. This is not shown on the diagram.}
+	\caption{An example network, showing 1 tag $t_1$ and 3 anchors $a_i$ and the reported distances between them.}
 	\label{fig:ExampleNetwork}
 \end{figure}
 
@@ -31,32 +31,23 @@ Each node is either an \textbf{anchor} or a \textbf{tag}. Both tags and anchors 
 The rangefinding subsystem's purpose is to determine the distances between every pair of nodes in the network. With this data, the position calculation subsystem can then determine the positions of every anchor and tag in 3D space. An example 2D rangefinding network is shown in Figure~\ref{fig:ExampleNetwork}.
 
 \section{Rangefinding}
-Rangefinding is the act of determining the distance between two things. Rangefinding is done wirelessly. The underlying concept is that if we precisely note the times at which we send and receive a signal, then -- since light travels at a fixed speed -- we can determine the distance the signal traveled, which is the distance between the nodes. 
+Rangefinding is the act of determining the distance between two objects. Rangefinding is done wirelessly in this project. The foundation of the technique is the idea that if the times at which a signal is sent and received between two nodes are precisely noted, then -- since light travels at a fixed speed -- we can determine the distance the signal traveled, which is the distance between the nodes. 
 
-The basic algorithm for the network is: 
+The nodes broadcast to every other node in the network whenever they transmit. A range calculation can be made whenever a response is received. Note that the range is calculated locally on each object, meaning a pair of nodes can believe they are different distances away from each other due to errors in the calculation of the range. Normally the ranges will be very close to each other, however.
+
+The algorithm the network follows is: 
 \begin{enumerate}
 	\item Each node broadcasts a message to every other node, and every node responds. 
-	\item The time it took for the message to travel from one node to another and then back (minus the time spent processing the received messages) is calculated.
-	\item With some simple math involving the speed of light the distance between the nodes is calculated. 
+	\item The time it took for the message to travel from one node to another and then back (minus the time spent processing the received messages on the microcontroller) is calculated.
+	\item Using the speed of light the distance between the nodes is calculated. 
 \end{enumerate}
 
-This method of calculating range is known as \textbf{time-of-flight} (TOF).
+This method of calculating ranges is known as \textbf{time-of-flight} (TOF).
 
-Each node is comprised of a DWM1000, can send wireless signals, and an Arduino microcontroller.
-
-\section{Requirements}
-The scope of the project is to handle precise rangefinding indoors in a room. The requirements for the system were:
-\begin{itemize}
-	\item The system must be able to produce ranges accurate to within three meters or less that are not noisy (regular swings of $\pm$ one meter would be unacceptable). Otherwise, what was displayed in the augmented reality portion of the project would not be useful. 
-	\item The system must calculate ranges at frequencies greater than 3Hz. Otherwise, moving objects will have their positions displayed inaccurately (and the system would be misleading).
-	\item The system must be able to rangefind within an area the size of a room (at least 5x5 meters). 
-	\item The system must be able to robustly handle nodes entering and leaving the network. 
-\end{itemize}
-
-It will be demonstrated how we sought to satisfy these criteria.
+Each node is comprised of a Decawave DWM1000 ultra-wideband transceiver, which is what sends and the receives the rangefinding signals, and an Arduino microcontroller which actually calculates the ranges from timestamps obtained from the DWM1000. More information on the hardware can be found in Chapter~\ref{RangefindingHardware}.
 
 \section{Time-of-Flight}
-This section briefly covers the math behind time-of-flight range calculations. For more in-depth information, \textcite{DW1000UserManual} has a comprehensive write-up of the different ways wireless ranging can be performed as well as an error analysis.
+This section briefly covers the math behind time-of-flight range calculations. For more in-depth information, Decawave has a comprehensive write-up of the different ways wireless ranging can be performed as well as an error analysis \cite{DW1000UserManual}.
 
 \subsection{Propagation Time}
 The goal behind time-of-flight is to measure the propagation time of a signal, $T_{prop}$. Once we obtain this, it is a simple measure to calculate the distance $d$ between the two nodes using the speed of light, $c$, with the following formula:
@@ -83,6 +74,7 @@ In the case where there are two nodes communicating with each other, \parencite{
 where $T_{round}$ and $T_{process}$ are the total durations between receiving and transmitting messages as can be seen in Figure~\ref{fig:BasicRanging}.
 
 \subsection{Double-sided Two-way Ranging}
+\label{DSTWR}
 
 \begin{figure}
 	\centering
@@ -92,7 +84,7 @@ where $T_{round}$ and $T_{process}$ are the total durations between receiving an
 	\label{fig:AsyncRanging}
 \end{figure}
 
-Because the clocks of two nodes may not pass time at the same rate (clock skew), the above equation will suffer from significant error. This is because processing times far dwarf the time it takes a signal to propagate. \parencite{DW1000UserManual} presents, without proof, the following equation for more accurate rangefinding:
+Because the clocks of two nodes may not pass time at the same rate (clock skew), the above equation will suffer from significant error. This is because processing times far dwarf the time it takes a signal to propagate. Decawave presents, without proof, the following equation for more accurate rangefinding \cite{DW1000UserManual}:
 
 \[
 	T_{prop} = \frac{T_{round1}  T_{round2} - T_{reply1} T_{reply2}}{T_{round1} + T_{round2} + T_{reply1} + T_{reply2}}
@@ -102,18 +94,23 @@ where $T_{round1}$, $T_{round2}$, $T_{reply1}$, $T_{reply2}$ are the durations b
 
 Because the ranging has two rounds, after the initial calculation of range we can calculate a new range value for every single following transmission by re-using the last timestamps received for the beginning of the next round.
 
+\section{Requirements}
+The scope of the project is to handle precise rangefinding in a small enclosed space, like an apartment. The requirements for the rangefinding subsystem system were:
+\begin{itemize}
+	\item The system must be able to produce ranges accurate to within three meters or less that are not noisy (regular swings of $\pm$ one meter would be unacceptable). If they are not, the AR portion of the project will not be able to show accurate ranges and may be misleading.
+	\item The system must calculate ranges at frequencies greater than 3Hz. Otherwise, moving objects will have their positions displayed inaccurately and the system would be misleading.
+	\item The system must be able to rangefind within an area the size of a room (at least 5x5 meters). 
+	\item The system must be able to handle lost transmissions in case of interference. 
+\end{itemize}
+
 \section{Networking Basics}
+Each node in the network broadcasts in a round robin fashion, with a small break after every node has transmitted. As part of a transmitted message, a node transmits the timestamp marking when the message was sent, a list of the timestamps noting when it last received a communication the other nodes in the network, and a list of the last computed ranges to the other nodes. Every other node in the network will use the timestamps contained in the message to compute a new range to the transmitting. Thus, every node in the network receives complete range information for the whole network.
 
-Each node in the network broadcasts in a round robin fashion, with a small break after each node has transmitted. As part of the transmitted message, the node transmits the timestamp of when it is sending the message, a list of the timestamps when it last received a communication from every other node in the network, and a list of the last computed ranges to the other nodes. Every other node in the network will receive this information and use it to compute a new range to the node in question. Thus, every node in the network receives complete range information for the whole network.
-
-The DWM uses 40 bits (5 bytes) for its timestamps. The Arduino internally represents these as 64-bit integers (the last byte being meaninless), but transmits them as 40 bit (5 byte) numbers.
-
-Every node in the network has a pre-determined ID, which is set when it the code is programmed onto the device. A single byte is used for this ID to save as much space as possible, though the code could easily be modified to support longer IDs if the devices were to be mass produced. Alternately, something like DHCP could be implemented. As there are only 7 devices currently operational, our project only uses IDs 1 through 7, though the IDs do need not be consecutive. ID 255 is a special dummy value used in the code and should not be selected for use with an actual device.
+Every node in the network has a pre-determined ID, which is set when the Arduino is programmed. A single byte is used for this ID to save as much space as possible, though the code could easily be modified to support longer IDs if the devices were to be mass produced. As there are only 7 devices currently operational, our project only uses IDs 1 through 7, though the IDs do need not be consecutive. ID 255 is a special dummy value used in the code and should not be selected for use with an actual device.
 
 Communications between the Arduino and the DWM1000 are handled through SPI. When the DWM1000 receives a message, it triggers an interrupt on the Arduino, which can then obtain the received data through SPI.
 
 \section{Communications Timing}
-
 \begin{figure}
 	\centering
 	\input{Figures/TransmissionOrder}
@@ -122,19 +119,17 @@ Communications between the Arduino and the DWM1000 are handled through SPI. When
 	\label{fig:TransmissionOrder}
 \end{figure}
 
-In order to maximize the operating frequency of the system and provide as smooth a visual experience as possible on the phone, we want to minimize the amount of time a node is not transmitting. In order to do this, it was decided that nodes should transmit in order of their ID in a round robin fashion. A round of transmissions are performed, each node transmitting once, and then it repeats. When one node receives a transmission, it checks to see if it is its turn and then transmits as soon as it can.
+In order to maximize the operating frequency of the system and provide as smooth a visual experience as possible on the phone, the amount of time a node is not transmitting should be minimized. As part of this goal, it was decided that nodes should transmit in order of their ID in a round robin fashion. A round of transmissions are performed, each node transmitting once, and then the round repeats. When one node receives a transmission, it checks to see if it is its turn and then transmits as soon as it has processed the message.
 
-This round robin ordering is done by creating an ordered array of IDs in the network. When a transmission is received, the network increments the index of the next expected device to transmit by one. A device can tell whether it should transmit by checking to see if its ID is equal to the ID of the next expected node to transmit. If so, it transmits. 
+This round robin ordering is implemented via an ordered array of IDs on each device. The array contains the ID of every node that has been detected transmitting. When a transmission is received, the network increments the index of the next expected device to transmit by 1. A device can tell whether it should transmit by checking to see if its ID is equal to the ID of the next expected node to transmit. 
 
-The downside to this approach is that if any transmission were to be lost, for example by interference or electrical noise, the network would grind to a halt as it waits for a message that is never going to come. A solution to this is to include a timer that tracks a window in which a message should be received. If it takes too long to receive a message, the device was assumed to have to failed to transmit for some reason and the next device will take their turn and transmit.
+The downside to this approach is that if any transmission were to be lost, for example by interference or electrical noise, the network would grind to a halt as it waits for a message that is never going to come. The project's solution to this is to include a timer that tracks a window in which a message is expected to be received. If a message is not received in this window, the device that was expected to transmit is assumed to have to failed to transmit and the next device takes their turn and transmits.
 
 To help the network be more robust, for example if one node has a clock that runs faster than the others (making it think a transmission is late when it is not), the network assumes whatever device last transmitted was right in doing so, and sets the index of the next node to transmit in the ordered array as being one higher than it.
 
-This approach also raises the question of how new nodes will join the network if a node is constantly transmitting. To solve this, a small delay is added at the end of each round. When a device wishes to enter the network, it waits for the end of a round, and then does a transmission in this added space. This transmission lets all devices know it is part of the network, and they will add it to their ordered lists of IDs appropriately. 
+This approach also raises the question of how new nodes can join the network if a node is constantly transmitting. To solve this, a small delay is added at the end of each round. When a device wishes to enter the network, it waits for the end of a round, and then does a transmission in this pause between rounds. This transmission lets all devices know it is part of the network, and it is added to the ordered array of IDs. (The edge case of a device's transmission failing when it is trying to join the network was ignored due to time constraints, but it is easy to solve manually via a reset of the device in question.)
 
-In the code, this delay at the end of the round is implemented by adding a dummy node with the ID of 255 (the highest ID possible with one byte) to the network. The nodes will wait for a transmission from it at the end of each round, but it will never come, at which point the round starts over with the lowest ID transmitting. An example ordering can be found in Figure~\ref{fig:TransmissionOrder}.
-
-An unsolved issue here is what happens when the transmission to join the network is sent and it is not received. This will cause the joining device to have a wrong order, and it will transmit at the same time as another device every round. Since the chances of this happening are quite low and could be solved by resetting the joining device, this is not dealt with. A possible solution to deal with this would be having the receiving device check the responses of all the other nodes to make sure they all received its transmission, and, if they have not, then to retransmit in the space at the end of the round until they do.
+To implement this, this delay at the end of the round is implemented by adding a dummy node with the ID of 255 (the highest ID possible with one byte) to the network. The nodes will wait for a transmission from it at the end of each round, but it will never come, at which point the round starts over with the lowest ID transmitting. An example ordering can be found in Figure~\ref{fig:TransmissionOrder}.
 
 Code for this logic can be found in the \code{loop} function of Appendix~\ref{ArduinoCode}.
 
@@ -147,11 +142,13 @@ Code for this logic can be found in the \code{loop} function of Appendix~\ref{Ar
 	\label{fig:NetworkPacket}
 \end{figure}
 
+Every transmission made by a node contains timestamps so that receiving nodes can calculate how far away they are from the sending node.
+
 The protocol for a transmission from a node is as follows:
 
 \begin{itemize}
 	\item 1 byte for the ID of the transmitting node. The ID cannot not be 255.
-	\item 5 bytes for the timestamp of the sending of the message.
+	\item 5 bytes for the timestamp of the sending of the message. The DWM1000 uses 40 bits (5 bytes) for its timestamps and has picosecond order resolution. The Arduino internally represents these as 64-bit integers, but transmits them as 40 bit (5 byte) numbers.
 	\item For each device the transmitting node has knowledge of:
 	\begin{itemize}
 		\item 1 byte for the ID of the device.
@@ -161,10 +158,9 @@ The protocol for a transmission from a node is as follows:
 	\end{itemize} 
 \end{itemize}
 
-Parsing a received message and updating range values from the parsed data is fairly straightforward. The code in question can be found in the \texttt{parseReceived} function in Appendix \ref{ArduinoCode}.
+Ranges are calculated with the timestamps via the double-sided two-way ranging formula in Section~\ref{DSTWR}. The code in question can be found in the \code{parseReceived} function in Appendix \ref{ArduinoCode}.
 
 \section{Summary}
-todo
+This section covered how a rangefinding network can be constructed, the higher-level aspects of the rangefinding system used in this project, including how ranges are calculated, and the networking protocol used.
 
-
-
+Transmissions are done in a round-robin fashion, and every transmission includes timestamps so the receiving device can calculate a range. Performance metrics of the system are enumerated in Chapter~\ref{RangefindingHardware}.

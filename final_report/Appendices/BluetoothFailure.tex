@@ -1,0 +1,18 @@
+% Bluetooth Failure
+
+\chapter{Bluetooth Rangefinding} % Main appendix title
+
+\label{BluetoothFailure} % For referencing this appendix elsewhere, use \ref{AppendixA}
+
+Originally, Bluetooth was chosen as for the wireless technology used for rangefinding. The reason for this was that Android cellphones, which usually have Bluetooth transceivers, could be used for tags and anchors. This would save a large amount of time, as cellphones include batteries, are easy to program, and almost everyone has one (which would make letting people use our project as easy as downloading an app). If a few phones were placed in a room were running an application designed for the project, rangefinding would be easy to acehive. Others were able to use Bluetooth to form in-door positioning systems \cite{BluetoothIndoor}, though the financial resources to make enough nodes to cover a building were unavailable.
+
+It became clear early on that Bluetooth -- specifically, Bluetooth used on Android cellphones -- was not suitable for this particular project. 
+
+There were two ways to use Bluetooth for ranging, and the viability of both was checked: 
+
+\begin{itemize}
+	\item RSSI (received signal strength indicator), which is essentially a measure of how strong a received signal is. Because signal power drops off with the square of distance, RSSI can be used to determine distance from a cellphone. There this is an app to do just that on the Google Play Store. Measurements showed that this was method had low range, was very noisy (power levels varied wildly), and had a large latency between measurements. As well, RSSI values are not standardized on cellphones, which means if RSSI were used to rangefind a calibration would have to be performed for every model of phone used in the network. Due to these factors, it was determined that using RSSI for distance measurements was not well suited for the fine-grained location tracking this project sought. 
+	\item Time-of-flight measurements. Experiments showed that the time it took to send a Bluetooth message itself through the Android OS suffered massive variance of milliseconds, which would lead to 300 km of error in calculated distances. Android does not have any guarantees on timing, and does not allow low-level programming access to its internals. This method was proven unworkable.
+\end{itemize}
+
+With all the avenues available for Bluetooth rangefinding exhausted, the idea was rejected.

@@ -46,6 +46,8 @@ table, %for xcolor
 
 \usepackage[titletoc]{appendix}
 
+\usepackage{indentfirst}
+
 \usepackage{palatino} % Use the Palatino font by default
 
 \usepackage{textcomp} %copyright
@@ -192,7 +194,7 @@ table, %for xcolor
 
 Virtual reality technology has lowering in cost and growing in popularity in recent years. This project uses a variant on virtual reality, augmented reality, to show the locations of tracked objects on an Android cellphone on top of images captured by the cellphone's camera.
 
-The project allow the user to know whether a tracked object is to the left, right, or behind them, which would be useful in, for example, a military context for tracking the locations of fellow soldiers.
+The project shows where a tracked target is relative to the user (including if it is left, above, below, or the right), which would be useful in, for example, a military context for tracking the locations of fellow soldiers.
 
 A proof of concept is presented which allows for accurate tracking in an in-door location. The system is composed of Decawave DW1000 ultra-wideband transceivers and Arduino Pro Mini microcontrollers forming a network of distance sensors, and Android cellphones running an augmented reality application created for the project. 
 
@@ -383,6 +385,8 @@ There were three main facets to the technical side of the project: rangefinding,
 \begin{appendices}
 \input{Appendices/ArduinoCode}
 \input{Appendices/AsyncProof}
+\input{Appendices/BluetoothFailure}
+\input{Appendices/RangefindingFrequencyAnalysis}
 %\include{Appendices/AppendixB}
 %\include{Appendices/AppendixC}
 \end{appendices}
