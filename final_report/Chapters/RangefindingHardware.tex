@@ -195,17 +195,22 @@ TBD & TBD & TBD \\
 
 The operating frequency was close to the values predicted by the theory in Section~\ref{OperatingFrequencyAnalysis}. Predicted and actual values can be found in Table~\ref{tab:RangefindingFrequency}.
 
-The max range between nodes was not determined due to space limitations but was at least (INSERT FIGURE HERE).
+The max range between nodes was not determined due to space limitations but was at least 10m. The DWM1000 should get at least 60m if there are no obstructions \cite{DWM1000UserManual}.
 
 \begin{table}
 \caption{The frequencies of the rangefinding subsystem for various numbers of devices in the network. Experimented performed by placing an increasing number of devices in a network and calculating the duration between range reports from node 1 to node 2.}
 \label{tab:RangefindingFrequency}
 \centering
-\begin{tabular}{l l}
+\begin{tabular}{c c c}
 \toprule
-\tabhead{Number of Devices} & \tabhead{Frequency} \\
+\tabhead{Number of Devices} & \tabhead{Round Time (\si{\micro \second})} & \tabhead{Frequency (Hz)} \\
 \midrule
-TBD & TBD \\
-\bottomrule\\
+2 & 37000 & 27 \\
+3 & 58000 & 17.2 \\
+4 & 86000 & 11.6 \\
+5 & 93000 & 10.8 \\
+6 & 156000 & 6.4 \\
+7 & 170000 & 5.9 \\
+\bottomrule
 \end{tabular}
 \end{table}

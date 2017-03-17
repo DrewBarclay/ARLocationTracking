@@ -89,20 +89,36 @@ There are a number of design considerations when dealing with the communications
 \begin{enumerate}
 	\item The stream of data may begin in the middle of a message, as the buffer storing the serial data sent from the Arduino has only a limited capacity. If a cellphone were connected to an anchor that had already been running for some time, it is quite likely that the buffer would have overflowed. So, the protocol must include a way to determine the start of a message.
 	\item The protocol should be human readable for easy debugging.
-	\item The protocol should use a minimum of data, as transmitting the bytes from the Arduino takes processing power that could be better spent on the rangefinding code.
 \end{enumerate}
 
 With this in mind, a simple protocol was developed. Lines of text, delineated by newline characters, are sent. If the Arduino is reporting the range between two devices, it sends a line with the format:
 
 \begin{center}
-\code{!r <from ID> <to ID> <range>}
+\code{!range <from ID> <to ID> <range in meters>}
 \end{center}
 
 If the cellphone reads a line which does not start with ``!r'', the line is assumed to either have started in the middle of a ranging information line, or else debug data has been sent. Either way, the line is discarded and the system waits to read a new line.
 
-An example log might read as:
+An example of the output from the Arduino is:
 
-(INSERT THIS LATER)
+\code{\\
+DW1000 initialized ... \\
+Committed configuration ... \\
+New device found. ID: 1 \\
+Transmission received from tag 1 with transmission count 1 \\
+!range 1 2 0.00 \\
+Transmission received from tag 1 with transmission count 3 \\
+!range 2 1 3.26 \\
+!range 1 2 91659.28 \\
+Transmission received from tag 1 with transmission count 5 \\
+!range 2 1 3.48 \\
+!range 1 2 3.38 \\
+Transmission received from tag 1 with transmission count 7 \\
+!range 2 1 3.37 \\
+!range 1 2 3.42 \\
+}
+
+Note the briefly extremely large range while the timestamps settle.
 
 Parsing is done on the cellphone with the \code{java.util.Scanner} class. The parsing code can be found in (INSERT THIS LATER).
 
