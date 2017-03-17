@@ -184,8 +184,7 @@ public class PositionMarker {
         //If we divide by the absolute value of the larger component, we will make our vector land right on the edge of the NCD box
         //(which is to say one of x and y will be = 1).
         float divisor = Math.max(Math.abs(x), Math.abs(y));
-        //TODO proper z value that is not -0.98
-        float[] edgeVector = {x/divisor, y/divisor, 0.6f, 1}; //homogenous component set to 1
+        float[] edgeVector = {x/divisor, y/divisor, 0.6f, 1}; //homogenous component set to 1, z value determines how large the arrow is later
 
         //Rotate based on vector in NDC, then rotate on inverted view matrix so it faces the camera
         float[] rotateToFaceEdgeMatrix = new float[16];
