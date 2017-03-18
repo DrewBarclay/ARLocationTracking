@@ -1,0 +1,26 @@
+\chapter{Position Calculation Proof}
+\label{PositionCalculationProof}
+
+The following distance formula was used to calculate the distance between two anchors while one rotates around the x axis $\theta$ degrees:
+
+\[ d_{12} = \sqrt{(x_{2} - x_{1})^{2} + (y_{2} - y_{1})^2 + (z_{2} - z{1})^2)} \]
+\[ d_{12} = \sqrt{(x_{2} - x_{1})^{2} + (y_{2} - y_{1}\cos\theta)^2 + (0 - y_{1}\sin\theta)^2)} \]
+\[ d_12^{2} = (x_{2} - x_{1})^{2} + y_{2}^{2} - 2y_{1}y_{2}\cos\theta + (y_{1}\cos\theta)^{2} + y_{1}\sin\theta^{2} \]
+
+The formula $\sin^{2}\theta = 1 - \cos^{2}\theta$ was substituted into the above:
+
+\[ d_{12}^{2} = (x_{2} - x_{1})^{2} + y_{2}^{2} - 2y_{1}y_{2}\cos\theta + (y_{1}\cos\theta)^{2} + y_{1}^2 + (y_{1}^{2}\cos^{2}\theta) \]
+
+Now to simplify:
+
+\[((y_{1}^2 - y_{1}^{2}) \cos^{2}\theta - 2y_{2}y_{1}\cos\theta) + ((x_{2} - x_{1})^{2} - d_{12}^{2} + y_{2}^{2} + y_{1}^{2}) = 0 \]
+
+ \[ (x_{2} - x_{1})^{2} - d_{12}^{2} + y_{2}^{2} + y_{1}^{2} =  2y_{2}y_{1}\cos\theta \]
+
+\[ \cos\theta = \frac{(x_{2} - x_{1})^{2} - d_{12}^{2} + y_{2}^{2} + y_{1}^{2}}{2y_{2}y_{1}} \]
+
+\[ \theta = \arccos(\frac{(x_{2} - x_{1})^{2} - d_{12}^{2} + y_{2}^{2} + y_{1}^{2}}{2y_{2}y_{1}}) \]
+
+This assumes that the distances reported by the tags had no noise. As there is always noise in the range measurements, the calculated position will be inaccurate. A direction for future work would be expanding on this formula to include the distances of tags to other tags and use them to reduce the error in their calculated position.
+
+This proof was written in the comments of \code{TagParser.java}. If the above equations are not clear, the code there may make things more obvious.
