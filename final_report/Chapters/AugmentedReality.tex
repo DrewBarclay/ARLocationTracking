@@ -200,7 +200,7 @@ To render the image in 2D, the NDCs are converted to the coordinates of pixels a
 \end{figure}
 In order to accurately display the locations of the devices, it is important that the 3D scene rendered by OpenGL match up with the real world as shown by the cellphone's camera. Figure~\ref{fig:CameraLens} shows how a camera can only see see a limited part of the world, as dictated by its field of view.
 
-As previously shown in Figure~\ref{ProjectionMatrix}, the projection matrix has a field of view which can be changed. The field of view for the OpenGL perspective matrix needs to be set on a per-cellphone basis to match that of the cellphone's camera for the project to display locations accurately.
+As previously shown in Figure~\ref{fig:ProjectionMatrix}, the projection matrix has a field of view which can be changed. The field of view for the OpenGL perspective matrix needs to be set on a per-cellphone basis to match that of the cellphone's camera for the project to display locations accurately.
 
 The process of creating a projection matrix that properly matches the phone's camera is complex \cite{CalibratedCamera} and due to time constraints they were not able to be implemented in the project.
 
@@ -210,7 +210,7 @@ The process of creating a projection matrix that properly matches the phone's ca
 	\includegraphics[width=6cm]{Figures/AxisDevice.png}
 	\decoRule
 	\caption{The coordinate system used by the Android Sensor API \cite{AndroidSensorDocsOverview} and by AR subsystem, assuming the phone's top points towards geomagnetic North and the screen points toward the sky. For the purposes of rotation, X points approximately East, Y to geomagnetic North, and Z towards the sky \cite{AndroidSensorDocs}.}
-	\label{fig:CameraLens}
+	\label{fig:RotationCoordinateSystem}
 \end{figure}
 
 In order to display the positions of markers on the screen correctly, the direction the camera is facing must be known. The cellphone can determine this by requesting the phone's rotation from Android's Sensor API. Android does not specify \emph{how} the rotation of the phone is determined, but in practice uses a subset of the magnetometer, accelerometer, and gyroscope (if the phone contains these sensors; Android does not force phone manufacturers to include any of these sensors). 
