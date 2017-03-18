@@ -20,7 +20,7 @@ This chapter covers the following topics:
 \end{enumerate}
 
 \section{3D Math Overview}
-This section covers the basics of using matrices to render 3D scenes. A full treatment of the subject is beyond the scope of this report, though other resources on the subject exist (PUT CITATION HERE). The reader is assumed to be familiar with some linear algebra, including the multiplication of matrices. 
+This section covers the basics of using matrices to render 3D scenes. A full treatment of the subject is beyond the scope of this report.. The reader is assumed to be familiar with some linear algebra, including the multiplication of matrices. 
 
 \subsection{Transformation Matrices}
 \begin{figure}
@@ -62,7 +62,7 @@ When written like this, the transformation matrix $\mathbf{M_1}$ can be viewed a
 
 In this report, points and vectors will be used interchangeably. When a matrix is said to multiply a point $p = (x, y, z)$, it should be considered as multiplying a vector $v = \begin{bmatrix}x & y & z\end{bmatrix}^T $. 
 
-The definitions of matrices which scale, translate, and rotate are mostly beyond the scope of this report. OpenGL provides utility functions to create them, so the exact definitions are unnecessary.
+The definitions of matrices which scale, translate, and rotate are beyond the scope of this report. OpenGL provides utility functions to create such matrices, so the exact definitions are unnecessary.
 
 \subsection{Homogenous Coordinates}
 For a given 3$\times$3 matrix $M$ and an arbitrary point in 3D space $p = (x, y, z)$, there is no $\mathbf{M}$ such that will multiplying it by any $p$ will cause $p$ to be translated by a specified number of units. There is, however, a way to do it with a homogenous point and a 4x4 matrix. This is one of the reasons homogenous coordinates are used in OpenGL.
@@ -120,10 +120,10 @@ x_h \\ y_h \\ z_h \\ w
  
  which is the translation of $p$ by $(T_x, T_y, T_z)$ units.
  
- \section{OpenGL}
-\textbf{OpenGL} is an API used to render 2D and 3D graphics. For the project, OpenGL was used to render position markers in 3D space overtop what the cell phone's camera sees.
+\section{OpenGL}
+\textbf{OpenGL} is an API used to render 2D and 3D graphics. In the project, OpenGL was used to render position markers in 3D space overtop what the cell phone's camera sees.
 
-OpenGL works by taking in collections of points making up a 3D model of an object and then applying various matrix transforms to the points, translating and rotating them. Afterwards, it projects them onto a 2D plane and renders them. A full treatment of how OpenGL works is beyond the scope of this report, but (INSERT CITATION HERE FOR OPENGL BOOK).
+OpenGL works by taking in collections of points making up a 3D model of an object and then applying various matrix transforms to the points, translating and rotating them. Afterwards, it projects them onto a 2D plane and renders them. A full treatment of how OpenGL works is beyond the scope of this report.
 
 The three main matrices that OpenGL uses to render a 3D scene are called the \textbf{projection matrix}, \textbf{view matrix}, and \textbf{model matrix}. This project uses several novel techniques which use and manipulate the matrices that OpenGL uses to render a 3D scene. This report will only cover them briefly, though other resources explore them more fully \cite{CodingLabs}.
 
@@ -186,9 +186,9 @@ For the rest of this project, the imaginary camera is assumed to be located at (
 
 In one of the last steps in rendering a 3D scene in OpenGL, the scene must be projected onto a plane so it can be displayed on a monitor. The projection matrix is involved in this process. View space is transformed into \textbf{projection space}, in which coordinates are transformed into \textbf{normalized device coordinates} (NDCs). Vertices which fall within the field of view will be contained within a cube with corners $(-1, -1, -1)$ and $(1, 1, 1)$ and are drawn. Vertices outside this box are culled. 
 
-There are different types of projection matrices. For the purposes of this projection, only the \textbf{perspective projection matrix} is considered. This projection takes into account that objects which are further away from the camera should appear smaller. Figure~\ref{fig:ProjectionMatrix} and Figure~\ref{fig:ProjectionMatrix2} show the transform from view space to projection space via a perspective projection matrix.
+There are different types of projection matrices. For the purposes of this report, only the \textbf{perspective projection matrix} is considered. This projection takes into account that objects which are further away from the camera should appear smaller, which matches how a camera captures images. Figure~\ref{fig:ProjectionMatrix} and Figure~\ref{fig:ProjectionMatrix2} show the transform from view space to projection space via a perspective projection matrix.
 
-To actually render the image in 2D, the NDCs are converted to the coordinates of pixels as determined by the size of the surface being rendered to. The $z$ coordinates handle depth, which allows OpenGL to determine whether a shape is on top of another during the rendering process.
+To render the image in 2D, the NDCs are converted to the coordinates of pixels as determined by the size of the surface being rendered to. The $z$ coordinates handle depth, which allows OpenGL to determine whether a shape is on top of another during the rendering process.
 
 \section{Camera Perspective and OpenGL Perspective}
 \begin{figure}
@@ -202,7 +202,7 @@ In order to accurately display the locations of the devices, it is important tha
 
 As previously shown in Figure~\ref{ProjectionMatrix}, the projection matrix has a field of view which can be changed. The field of view for the OpenGL perspective matrix needs to be set on a per-cellphone basis to match that of the cellphone's camera for the project to display locations accurately.
 
-(TODO FINISH THIS UP LATER WITH MORE DETAIL IF TIME PERMITS.)
+The process of creating a projection matrix that properly matches the phone's camera is complex \cite{CalibratedCamera} and due to time constraints they were not able to be implemented in the project.
 
 \section{Cellphone Rotation}
 \begin{figure}
@@ -225,9 +225,9 @@ The Android Sensor API can directly return a rotation matrix. However, the way i
 
 The rotation matrix returned is used in the project to create the view matrix by taking a ``lookAt'' vector equal to $(0, 0, -1)$ (which represents that the camera, when at `rest' on a table looks down the z axis) and ``up'' vector equal to $(0, 1, 0)$ (arbitrarily stating that the `up' direction of the cellphone screen points north) and rotating each by the rotation matrix returned by the phone. The new vectors produced are then used in the OpenGL utility function \code{setLookAtM} which creates a view matrix based on an up vector and the point at which the camera should be looking at.
 
-The rotation matrix could have been used directly as the view matrix without going through these steps. However, for later processing it is necessary to have the lookAt and up vectors rotated. 
+The rotation matrix could have been used directly as the view matrix without going through these steps. However, it was found convenient to have the lookAt and up vectors rotated and available for use. 
 
-Thus, if we ignore the transformation required to correct for the arbitrary coordinate system of the position calculation subsystem, the view matrix, $\mathbf{V}$, every frame is to set it equal to the rotation matrix the Android OS last returned, $\mathbf{R_{cur}}$:
+If we ignore the transformation required to correct for the arbitrary coordinate system of the position calculation subsystem, the view matrix, $\mathbf{V}$, every frame is to set it equal to the rotation matrix the Android OS last returned, $\mathbf{R_{cur}}$:
 
 \[
 	\mathbf{V} = \mathbf{R_{cur}}
@@ -240,7 +240,7 @@ As noted in Section~\ref{FrameOfReference}, the positions calculated by the posi
 The steps a user follows to calibrate the system are:
 \begin{enumerate}
 	\item The user taps the phone's screen to enter calibration mode.
-	\item The system creates a new view matrix every frame which will cause the screen to display the position of an arbitrary device in the network in the middle of the screen.
+	\item The system creates a new view matrix every frame which will cause the screen to display the position of an arbitrary device in the network in the middle of the screen. The rotation of the phone is not taken into account for this view matrix.
 	\item The user then points the phone directly at the tag being displayed and rotates the phone until the position of a second tag matches its location on the screen.
 	\item The user then taps the screen to end calibration mode. The system stores the view matrix at this time, $\mathbf{V}_{end}$, as well as the raw rotation matrix at the time, $\mathbf{R}_{end}$.
 	\item If the locations of other tags are incorrect due the z-axis being flipped (the z axis of the position calculation subsystem flips based on the elevation of the anchor with the highest ID), the user taps the phone's screen twice to correct it. The system stores this in a boolean and, when calculating the positions of other devices relative to the user's location, knows whether to flip the z component.
@@ -306,7 +306,7 @@ for (int i = 0; i < 3; i++) {
 
 The system displays an arrow on the edge of the screen pointing towards where the object is. To determine the angle and the part of the screen where the arrow should be drawn, we continue to use $p_NDC$.
 
-The direction of the arrow can be determine by the vector from the center of the screen, $(0, 0, 0)$ in NDCs, to $p_{NDC}$. The z component is ignored, and we only look at the xy components of the point. Then, the edge of the screen where the arrow should go is given in NDCs as where that vector intersects the bounding box from $(-1, -1)$ to $(1, 1)$. This intersection is calculated by dividing $p_{NDC}$ by the larger of its components, so that the magnitude of the larger component is 1 and the magnitude of the smaller component is some number smaller than 1. The new point is $p_{edge}$.
+The direction of the arrow can be determine by the vector from the center of the screen, $(0, 0, 0)$ in NDCs, to $p_{NDC}$. The z component is ignored (as we are rendering a 2D arrow not a 3D arrow there is no way to add a tilt using the z contribution), and we only look at the xy components of the point. Then, the edge of the screen where the arrow should go is given in NDCs as where that vector intersects the bounding box from $(-1, -1)$ to $(1, 1)$. This intersection is calculated by dividing $p_{NDC}$ by the larger of its components, so that the magnitude of the larger component is 1 and the magnitude of the smaller component is some number smaller than 1. The new point is $p_{edge}$.
 
 The point is transformed back into world coordinates by multiplying the inverse of the view-projection matrix by it. Then, the square textured with an arrow image on it is rotated an amount determined by where the point is on the screen so it will point in the same direction as the vector from the NDCs $(0, 0, 0)$ to $p_{NDC}$. 
 
@@ -349,5 +349,15 @@ An example of the rendered off-screen arrow can be seen in (TODO).
 \section{Results}
 Show off how accurate we are. Have Youtube videos displaying such.
 
-\section{Conclusion}
-Conclusion of this section: we can render positions on the screen and have 3D math to do so etc.
+\section{Summary}
+This chapter dealt with a number of topics related to rendering the position markers this project requires.
+
+First, the chapter dealt with a brief overview of transformation matrices and homogenous coordinates. Transformation matrices are used to scale, rotate, and translate vertices. Homogenous coordinates are regular coordinates with an added $w$ component which acts to scale the rest of the components in the vector.
+
+OpenGL renders a 3D scene using three main matrices: the model matrix, which converts from a model to the world, the view matrix, which then transforms the vertices so they face the camera, and finally the projection matrix, which converts from view space to coordinates of the cellphone's screen.
+
+Objects can be made to face the screen via billboarding. In this project, 3D squares are used which are textured with the marker and arrow images. To make the squares face the camera, the 3D objects are rotated on all three axes by multiplying by the inverse of the rotational part of the view matrix.
+
+Android's API for getting the rotation of the cellphone was discussed. The rotation matrix is very accurate, but becomes inaccurate when the device is in motion. A calibration rotation matrix is constructed to transform the position calculation subsystem's positions into coordinates that can be mapped to the real world.
+
+The accuracy of the AR subsystem is discussed. TODO

@@ -141,4 +141,10 @@ Note the briefly extremely large range while the timestamps settle.
 Parsing is done on the cellphone with the \code{java.util.Scanner} class. The parsing code can be found in (INSERT THIS LATER).
 
 \section{Summary}
-This chapter covered the issues with the infinite possible positions that can be calculated from a set of ranges between nodes, the math behind calculating positions in 3D given ranges, and how the cellphones and Arduinos are interfaced.
+This chapter covered the position calculation subsystem.
+
+The issues with the infinite possible positions that can be calculated from a set of ranges between nodes were raised. Ultimately the positions calculated by this system must be calibrated by the cell phone to correspond to real world positions.
+
+The math behind calculating positions in 3D given distances between nodes was discussed. The key to solving for the position of the fourth anchor is through making a circle around the x-axis and finding out where on the circle to place the fourth anchor so that the distance from it to anchor 3 matches.
+
+Finally, the specifics of how the cellphones and Arduinos are interfaced were discussed. The Arduino, which holds the range information, is connected to the cell phone via a USB cable which translates the serial output of the Arduino into a stream of bytes for the cell phone to read and parse. Messages can be corrupted on occasion or be received halfway through, so each important message starts with a `!' character.
