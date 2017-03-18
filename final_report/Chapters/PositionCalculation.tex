@@ -12,7 +12,7 @@ This chapter covers the position calculation subsystem, which takes the ranges f
 The topics covered in this chapter are:
 \begin{enumerate}
 	\item The infinite possible positions able to be calculated from a set of ranges.
-	\item A high-level example of calculating positions with basic trigonometry in 2D.
+	\item An example of calculating the positions of anchors with basic trigonometry in 2D.
 	\item How this is extended to 3D.
 	\item The protocol used by the Arduinos to communicate with the cell phones of the users and transfer the ranging data.
 \end{enumerate}
@@ -33,7 +33,8 @@ The rangefinding subsystem determines the ranges between various devices. With t
 
 In order to cut down on the infinite possible solutions to finding positions given only range data, this subsystem must arbitrarily create its own system of coordinates. The positions calculated by this subsystem must be further transformed so as to correspond to the real world. This transformation is not covered in this chapter, and instead is dealt with in Section~\ref{Calibration}.
 
-\section{High-Level Example in 2D}
+\section{Starting in 2D}
+\label{HighLevelExample}
 
 \begin{figure}
 	\centering
@@ -43,9 +44,9 @@ In order to cut down on the infinite possible solutions to finding positions giv
 	\label{fig:PositionCalculationNetwork}
 \end{figure}
 
-As 3D position calculation is much more complex, position calculation is done in 2D will be explained first. We start with the distances between three anchors, $a_{0}$, $ a_{1}$  and $a_{2}$. The distance between anchor $i$ and anchor $j$ is $d_{ij}$. 
+As 3D position calculation is much more complex, position calculation is done in 2D will be explained first. We start by calculating the distances between three anchors, $a_{0}$, $ a_{1}$  and $a_{2}$. The distance between anchor $i$ and anchor $j$ is $d_{ij}$. This network is shown in Figure~\ref{fig:PositionCalculationNetwork}.
 
-In order to assign positions in 2D space to them that keep them the same ranges from each other, we start by setting $a_{0}$ arbitrarily to be at the origin. Next, we arbitrarily declare $a_{1}$ to be on the x-axis, which puts it at the position $(0, d_{01})$. With these two positions, we can calculate the angle $\Theta$ between the x-axis and the vector from $a_0$ to $a_2$ with the cosine law:
+In order to assign positions in 2D space to the anchors that keep them the same ranges from each other, $a_{0}$ is set arbitrarily to be at the origin. Next, $a_{1}$ is arbitrarily decided to be on the x-axis, which puts it at the position $(0, d_{01})$. With these two positions, the angle $\Theta$ between the x-axis and the vector from $a_0$ to $a_2$ can be calculated with the cosine law:
 
 \[ \Theta = \cos ^{-1}\Big(\frac{d_{01}^2 + d_{02}^2 - d_{12}^2 }{2 d_{01} d_{02}}\Big)\]
 
@@ -54,25 +55,35 @@ With $\Theta$, we can calculate x and y coordinates of $a_2$:
 \[ x = cos(\Theta) d_{12} \]
 \[ y = sin(\Theta) d_{12} \]
 
-\section{Extending This to 3D}
-Extending the subsystem to three dimensions does not really change the calculation all that much except that we now need four anchors to get a reliable position in three dimensions. We have our four anchors: $a_{0}$, $a_{1}$ , $a_{2}$ and $a_{3}$, we arbitrarily set one as the origin $a_{0}$(0, 0, 0) and we now make a horizontal line to another anchor say $a_{1}$ and since we know the distance between these two anchors we can get the position to be $a_{1}$(0, $d_{01}$, 0), where $d_{01}$ is the distance between $a_{0}$ and $a_{1}$. We can now form a triangle with the third anchor and use cosine law to determine the position and we arbitrarily set the z value to 0.
-\\
-We now have the coordinates for the third anchor, but we do not know the correct orientation in the z axis, it could be either positive or negative. This is where the fourth anchor comes in, we use the anchor to create a temporary point using the same method we use above.
-\\
+\section{3D Position Calculation}
+Extending the subsystem to three dimensions starts the same way as in two dimensions, though four anchors are required to get a reliable position in 3D. We have our four anchors: $a_{0}$, $a_{1}$ , $a_{2}$ and $a_{3}$. 
+
+To begin, the same steps are followed as detailed in Section~\ref{HighLevelExample}, but the z-coordinate of every point is set to 0. That is, the origin is arbitrarily determined to be the position of $a_{0}$. $a_{1}$ is arbitrarily determined to be on the x-axis and placed at $(0, d_{01}, 0)$, where $d_{01}$ is the distance between $a_{0}$ and $a_{1}$. The cosine law is then used to determine the position of $a_{2}$.
+
+The calculation of the position of the fourth anchor comes last. As the other three anchors have been declared as being on the xy-axis, the fourth anchor must contain a z-component.
+
+To begin with, we calculate the $(x, y)$ position of the fourth anchor as if it were on the xy-plane - though only temporarily.
+
 \[ \Theta = \cos ^{ - 1}\Big(\frac{d_{01}^2 + d_{03}^2 - d_{13}^2 }{2 d_{01} d_{03}}\Big)\]
-\\
+
 \[ x_{temp} = cos(\Theta) d_{13} \]
 \[ y_{temp} = sin(\Theta) d_{13} \]
 \[ z_{temp} = 0 \]
-\\
-We will rotate around the x-axis by keeping the x value constant and taking the y distance and z distance to be a circle of radius of $y_{temp}$.We calculate the distance between the x value of the temporary point and the x value of anchor 2, we denote this value $\Delta x$.
-\\
+
+This temporary point is the correct distance from all the anchors except $a_3$. In order to determine a position that is the correct distance away from $a_2$ but still the same distance away from $a_0$ and $a_1$, the temporary point is rotated around the x-axis. Because the first two anchors are on the x-axis, this keeps their distance to $a_3$ constant.
+
+This rotation forms a circle around the x-axis of a radius equal to $y_{temp}$. We will rotate our temporary point to a position where its distance from $a_2$ is equal to $d_{23}$.
+
+We calculate the distance between the x value of the temporary point and the x value of anchor 2, we denote this value $\Delta x$.
+
 \[ \Delta x = x_{temp} - x_{2} \]
-\\
-Now that we have $\Delta x$ we can now calculate the position of our fourth anchor using cosine law.
-\\
+
+Now that we have $\Delta x$ we can now calculate the position of our fourth anchor using trigonometry:
+
 \[\Theta = \cos ^{ - 1}\Big(\frac {\Delta x^2 - d_{23}^2 + y_{2}^2 + y_{temp}^2}{2 y_{2} y_{temp}}\Big)\]
-\\
+
+There are two possible values for $\Theta$, positive or negative. The decision affects whether our anchor has a positive or negative z-component. The positive z-component is chosen arbitrarily; the cell phone calibration process can flip the z-component later.
+
 \[ x_{3} = x_{temp} \]
 \[ y_{3} = cos(\Theta) y_{temp} \]
 \[ z_{3} = sin(\Theta) y_{temp} \]
