@@ -277,6 +277,23 @@ Intuitively, when a model's vertices are multiplied by the view matrix, they are
 As the camera is always situated at $(0, 0, 0)$ in this project, multiplying the model matrix of the textured square by the inverted view matrix will produce a billboarding effect. If we first rotate the square about the Z-axis (assuming the square's vertices are on the XY plane), it will produce the rotating effect on the final image.
 
 \section{Marking the Positions of Objects Off-Screen}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=8cm]{Figures/OffscreenPositions1.png}
+	\decoRule
+	\caption{Offscreen tag positions are shown with a green arrow}
+	\label{fig:Billboarding}
+\end{figure}
+
+begin{figure}
+	\centering
+	\includegraphics[width=8cm]{Figures/OffscreenPositions2.png}
+	\decoRule
+	\caption{Offscreen tag positions are shown with a green arrow}
+	\label{fig:Billboarding}
+\end{figure}
+
 One of the advantages of AR is the ability to put more information on the screen than can be seen with the human eye. As part of the goal of the project to increase the user's awareness of the locations of objects, the system informs the user of where an object is relative to them when the object is not within the viewing area of the camera.
 
 First, the system needs to determine whether or not the objection is within the viewing area. This is done by multiplying the object's position in space relative to the camera by the view and projection matrices. That is, given a position $p$, we find the NDCs of $p$, $p_{NDC}$, by:
