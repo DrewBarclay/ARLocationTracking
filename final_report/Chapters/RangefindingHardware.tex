@@ -4,6 +4,15 @@
 
 \label{RangefindingHardware}
 
+This chapter covers the specifics of the hardware and its use in the rangefinding subsystem. The topics covered are:
+\begin{enumerate}
+	\item The wireless communications technology used in the rangefinding subsystem, which is called ultra-wideband.
+	\item Design justifications for the choice of the Decawave DWM1000 and Arduino Pro Mini chips.
+	\item The design and construction of the anchors and tags used in the rangefinding subsystem, as well as the design of a PCB for the tags.
+	\item A brief overview of how the DWM1000 is controlled in software.
+	\item Performance metrics of the rangefinding subsystem.
+\end{enumerate}
+
 \section{Wireless Communications}
 At the start of the project, it was determined that a technology would need to be chosen to handle wireless communications for ranging purposes. A number of options were considered. The ideal technology would:
 \begin{itemize}
@@ -88,10 +97,10 @@ Several designs were considered for the PCB connecting the Arduino and DWM1000. 
 
 Several designs were considered at first:
 \begin{itemize}
-	\item The first idea considered was to place the Arduino and DWM on top of each other, resulting in the smallest possible size. However, the physical dimensions of the two components made this impossible. 
+	\item The first idea considered was to place the Arduino and DWM on top of each other, resulting in the smallest possible size. However, the physical dimensions of the two components made this impossible. Pins from each component would have to be laid on each other, resulting in a circuit that does not work.
 	\item Another possibility was to place each component on opposite sides of the PCB, but the Arduino's design demanded breakout headers to solder it into the board, which meant the PCB had to have holes drilled, which again meant that the physical dimensions of the two components interfered.
 	\item Yet another idea was to make two PCBs. The Arduino would connect to a PCB above it, and that PCB would connect to a board above it with the DWM1000 soldered to it. Because it was layered, the pins connecting the layers could be arranged such that the Arduino and DWM1000 were essentially above each other, but without the locations of their pins interfering with each other. This design was abandoned because the breakout pins would add a large amount of vertical length, it was twice as expensive, and because it was much more complex to design.
-	\item The final idea considered was to have the Arduino and DWM1000 just be placed next to each other on the same side of a PCB. This design was physically realizable, the least expensive, and though it was not as compact as would be ideal, it was still small enough to meet our requirements.
+	\item The final idea considered was to have the Arduino and DWM1000 just be placed next to each other on the same side of a PCB. This design was physically realizable, the least expensive, and though it was not as compact as would be ideal, it was still small enough to meet the requirements.
 \end{itemize}
 
 The last idea was chosen due to the its cheap cost, simplicity of design, and satisfactory size. 
@@ -123,16 +132,16 @@ It is important to minimize this delay so as to increase the maximum frequency t
 \section{Calibrating}
 DWM1000s need to be calibrated to give correct distances due to the capacitance of the hardware connected to the chips, among other factors. Some of these factors are controlled for in software in the \code{arduino-dw1000} library. For a detailed overview of the possible errors and how to correct for them, the reader is advised to read the relevant sections in the DW1000 User Manual \cite{DW1000UserManual}.
 
-The primary factor which could not be controlled for by the manufacturer, Decawave, was the antenna delay. The capacitance of the hardware the DWM1000 is hooked up to can cause nanosecond-level delays in transmission (in experiments, it was found that this could cause a meter of error or more incorrectly configured). This is a constant, and is determined empirically. The antenna delay constant for the tags is roughly the same. Good values were in the range of 16470-16500, and the antenna delay for the anchors is roughly the same and was found to be INSERT NUMBER HERE TODO.
+The primary factor which could not be controlled for by the manufacturer, Decawave, was the antenna delay. The capacitance of the hardware the DWM1000 is hooked up to can cause nanosecond-level delays in transmission (in experiments, it was found that this could cause a meter of error or more incorrectly configured). This is a constant, and is determined empirically. The antenna delay constant for the tags is roughly the same. Accurate values (under 50cm of error) were in the range of 16470-16500, and the antenna delay for the anchors is roughly the same and was found to be INSERT NUMBER HERE TODO.
 
 Changing the antenna delay in the main code for easier calibration required changes to the \code{arduino-dw1000} library. A link to the code can be found in Appendix~\ref{ArduinoCode}.
 
 \section{Results}
 \label{RangefindingResults}
-Results showed that the DWM1000 was close to as accurate as Decawave claimed (within 10cm). Of note, sometimes the reported ranges would glitch and be off by a meter or more. Table~\ref{tab:RangefindingAccuracy} shows the accuracy of the system. Though the accuracy of the rangefinding system was not a direct requirement of the project as a whole, the accuracy of the rangefinding system translates into accuracy of the position calculating system and thus the accuracy of the markers on the AR display.
+Results showed that the DWM1000 was close to as accurate as Decawave claimed (under 10cm). The project was found to be within 50cm most of the time, and it is possible more calibration could have improved this further). However, sometimes the reported ranges would glitch and be off by a meter or more. Table~\ref{tab:RangefindingAccuracy} shows the accuracy of the system. Though the accuracy of the rangefinding system was not a direct requirement of the project as a whole, the accuracy of the rangefinding system translates into accuracy of the position calculating system and thus the accuracy of the markers on the AR display.
 
 \begin{table}
-\caption{Accuracy of the rangefinding subsystem. Experiment performed with a tape measur and two tags lying on the ground. Antenna delay 16470.}
+\caption{Accuracy of the rangefinding subsystem. Experiment performed with a tape measure and two tags lying on the hardwood floor of an apartment. Antenna delay 16470.}
 \label{tab:RangefindingAccuracy}
 \centering
 \begin{tabular}{c c c}
@@ -148,9 +157,9 @@ Results showed that the DWM1000 was close to as accurate as Decawave claimed (wi
 \end{tabular}
 \end{table}
 
-The operating frequency was close to the values predicted by the theory in Section~\ref{OperatingFrequencyAnalysis}. Predicted and actual values can be found in Table~\ref{tab:RangefindingFrequency}.
+The operating frequency was close to the values predicted by theory, as can be seen in Appendix~\ref{OperatingFrequencyAnalysis}. Frequency values can be found in Table~\ref{tab:RangefindingFrequency}.
 
-The max range between nodes was not determined due to space limitations but was at least 10m. The DWM1000 should get at least 60m if there are no obstructions \cite{DWM1000UserManual}.
+The max range between nodes was not determined due to space limitations but was at least 10m. The DWM1000 User Manual claims that the there is at least 60m of range if there are no obstructions \cite{DWM1000UserManual}.
 
 \begin{table}
 \caption{The frequencies of the rangefinding subsystem for various numbers of devices in the network. Experimented performed by placing an increasing number of devices in a network and calculating the duration between range reports from node 1 to node 2.}
@@ -169,3 +178,15 @@ The max range between nodes was not determined due to space limitations but was 
 \bottomrule
 \end{tabular}
 \end{table}
+
+\section{Summary}
+This chapter covered ultra-wideband, the wireless communications technology used in the rangefinding subsystem, and how it is particularly well suited to in-door rangefinding applications. 
+
+Reasons for why the DWM1000 and Arduino Pro Mini were discussed. The DWM1000 was known to be suitable for this application, and the Arduino Pro Mini was known to have software already written for it to interface with the DWM1000.
+
+The design of the tags and anchors was discussed. Tags had custom PCBs designed for them due to their need to be a small size, while anchors were kept on a breadboard because there was no advantage to resoldering them on a PCB.
+
+The code used to control the DWM1000 was brought up. It is particularly important to keep in mind how long the Arduino takes to process messages, as delayed messages are used to transmit the timestamp of when a message is sent, and if the Arduino takes too long the message will fail to send.
+
+Finally, performance metrics were discussed. The system can determine ranges with an accuracy of under 50cm, and can update ranges 5.9-27Hz depending on how many devices are in the network.
+
