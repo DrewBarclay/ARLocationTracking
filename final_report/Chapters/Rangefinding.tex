@@ -131,7 +131,7 @@ This approach also raises the question of how new nodes can join the network if 
 
 To implement this, this delay at the end of the round is implemented by adding a dummy node with the ID of 255 (the highest ID possible with one byte) to the network. The nodes will wait for a transmission from it at the end of each round, but it will never come, at which point the round starts over with the lowest ID transmitting. An example ordering can be found in Figure~\ref{fig:TransmissionOrder}.
 
-Code for this logic can be found in the \code{loop} function of Appendix~\ref{ArduinoCode}.
+Code for this logic can be found in the \code{loop} function of the Arduino code. See Appendix~\ref{SourceCode}.
 
 \section{Range Information Protocol}
 \begin{figure}
@@ -158,7 +158,7 @@ The protocol for a transmission from a node is as follows:
 	\end{itemize} 
 \end{itemize}
 
-Ranges are calculated with the timestamps via the double-sided two-way ranging formula in Section~\ref{DSTWR}. The code in question can be found in the \code{parseReceived} function in Appendix \ref{ArduinoCode}.
+Ranges are calculated with the timestamps via the double-sided two-way ranging formula in Section~\ref{DSTWR}. The code in question can be found in the \code{parseReceived} function in the Arduino source code. See Appendix \ref{SourceCode}.
 
 \section{Summary}
 This section covered how a rangefinding network can be constructed, the higher-level aspects of the rangefinding system used in this project, including how ranges are calculated, and the networking protocol used.
