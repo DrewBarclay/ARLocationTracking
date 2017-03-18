@@ -78,6 +78,12 @@ table, %for xcolor
 \definecolor{Gray}{gray}{0.925}
 \definecolor{Transparent}{gray}{1}
 
+\lstset{
+    frame=single,
+    breaklines=true,
+   % postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}}
+}
+
 %----------------------------------------------------------------------------------------
 %	MARGIN SETTINGS
 %----------------------------------------------------------------------------------------
@@ -389,6 +395,7 @@ There were three main facets to the technical side of the project: rangefinding,
 \input{Appendices/AsyncProof}
 \input{Appendices/BluetoothFailure}
 \input{Appendices/RangefindingFrequencyAnalysis}
+\input{Appendices/PositionCalculationProof}
 %\include{Appendices/AppendixB}
 %\include{Appendices/AppendixC}
 \end{appendices}
