@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
                 while (true) {
                     FT_Device ftd = mTagManager.getFtDevice();
 
+
                     if (ftd != null && ftd.isOpen()) {
                         byte[] buffer = new byte[64];
                         int len;

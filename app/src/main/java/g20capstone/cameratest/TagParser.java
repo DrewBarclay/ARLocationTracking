@@ -37,9 +37,12 @@ public class TagParser {
                 //This line is intended to convey range information.
                 int id1 = sc.nextInt();
                 int id2 = sc.nextInt();
-                float range = sc.nextFloat();
+                float range = Math.abs(sc.nextFloat());
+                if (range < 1) {
+                    range = 1f;
+                }
                 //Sanity check it...
-                if (range > -1f && range < 1000f) {
+                if (range > -5f && range < 1000f) {
                     if (ranges.containsKey(Pair.create(id1, id2))) {
                         float oldRange = ranges.get(Pair.create(id1, id2));
                         float newRange = oldRange * 0.7f + range * 0.3f;
@@ -63,7 +66,7 @@ public class TagParser {
 
     public synchronized HashMap<Integer, Point3D> getPositions() {
         //Debug code:
-        if (false) {
+        if (true) {
             HashMap<Integer, Point3D> debugPos = new HashMap<>();
             debugPos.put(0, new Point3D(0, 0, 0));
             debugPos.put(1, new Point3D(5, 5, 0));

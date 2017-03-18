@@ -105,21 +105,16 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     @Override
     public void onDrawFrame(GL10 gl) {
         //Every 50 ms...
-        if (System.nanoTime() - mPositionTimer > 50e-3*1e9) {
-            Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
-            if (possiblePositions != null) {
-                boolean valid = true;
-                for (Map.Entry<Integer, Point3D> e : possiblePositions.entrySet()) {
-                    Point3D p = e.getValue();
-                    if (Math.abs(p.x) > 1000 || Math.abs(p.y) > 1000 || Math.abs(p.z) > 1000) {
-                        valid = false;
-                    }
-                }
-                if (valid && possiblePositions != null && possiblePositions.size() > 0) {
-                    mPositionTimer = System.nanoTime();
+        try {
+            if (System.nanoTime() - mPositionTimer > 50e-3 * 1e9) {
+                Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
+                if (possiblePositions != null) {
                     positions = possiblePositions;
                 }
+                mPositionTimer = System.nanoTime();
             }
+        } catch (Exception e) {
+
         }
         Point3D ourPos = (positions != null) ? (positions.get(mTagParser.ourId)) : (null);
 

@@ -105,7 +105,7 @@ public class TagManager {
                 }
 
                 Log.v("Drew", "Successfully opened.");
-                ftDevice.setBaudRate(115200);
+                ftDevice.setBaudRate(19200);
             } else {
                 Log.d("Drew", "Device not FTDI.");
             }
