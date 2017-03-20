@@ -59,6 +59,11 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     private long mPositionTimer;
     private Map<Integer, Point3D> positions;
+    private Point3D ourPos;
+
+    private float zFlip = 1;
+
+    private static final float SCALE = 45f;
 
     public ARRenderer(Activity context, SensorManager sensorManager, Display display, TagParser tagParser) {
         mContext = context;
@@ -99,24 +104,71 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
         // this projection matrix is applied to object coordinates
         // in the onDrawFrame() method
-        Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 200);
+        //Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 200);
+
+
+        //From http://blog.db-in.com/cameras-on-opengl-es-2-x/
+        float[] matrix = new float[16];
+
+        float near = 0.1f, far = 1000.0f;
+        float angleOfView = 60.0f;
+        float aspectRatio = ratio;
+
+        // tan(FOV_H/2) / screen_width = tan(FOV_V/2) / screen_height
+        // http://answers.unity3d.com/questions/888008/relationship-between-fov-and-aspect-ratio.html
+        //FOV_V = 2 * atan(screen_height / screen_width * tan(FOV_H/2))
+        float fovy = 180f / (float)Math.PI * 2f * (float)Math.atan(Math.tan(angleOfView*Math.PI/180/2/aspectRatio));
+        Matrix.perspectiveM(mProjectionMatrix, 0, fovy, aspectRatio, near, far);
+
+/*        // Some calculus before the formula.
+        float size = near * (float)Math.tan(angleOfView * Math.PI / 180 / 2.0);
+        float left = -size, right = size, bottom = -size / aspectRatio, top = size / aspectRatio;
+
+        // First Column
+        matrix[0] = 2 * near / (right - left);
+        matrix[1] = 0.0f;
+        matrix[2] = 0.0f;
+        matrix[3] = 0.0f;
+
+        // Second Column
+        matrix[4] = 0.0f;
+        matrix[5] = 2 * near / (top - bottom);
+        matrix[6] = 0.0f;
+        matrix[7] = 0.0f;
+
+        // Third Column
+        matrix[8] = (right + left) / (right - left);
+        matrix[9] = (top + bottom) / (top - bottom);
+        matrix[10] = -(far + near) / (far - near);
+        matrix[11] = -1;
+
+        // Fourth Column
+        matrix[12] = 0.0f;
+        matrix[13] = 0.0f;
+        matrix[14] = -(2 * far * near) / (far - near);
+        matrix[15] = 0.0f;
+
+        for (int i = 0; i < matrix.length; i++) {
+            mProjectionMatrix[i] = matrix[i];
+        }*/
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         //Every 50 ms...
         try {
-            if (System.nanoTime() - mPositionTimer > 50e-3 * 1e9) {
+            if (System.nanoTime() - mPositionTimer > 200e-3 * 1e9) {
                 Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
                 if (possiblePositions != null) {
                     positions = possiblePositions;
+                    ourPos = positions.get(mTagParser.ourId);
+                    Log.d("ARRenderer", positions.toString());
                 }
                 mPositionTimer = System.nanoTime();
             }
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
-        Point3D ourPos = (positions != null) ? (positions.get(mTagParser.ourId)) : (null);
 
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -131,7 +183,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         if (mCalibrating) {
             Point3D calibrationDevicePos = positions.get(1); //change this later TODO
             if (calibrationDevicePos != null && ourPos != null) {
-                Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, (float)(calibrationDevicePos.x - ourPos.x), (float)(calibrationDevicePos.y - ourPos.y), (float)(calibrationDevicePos.z - ourPos.z), mUpVector[0], mUpVector[1], mUpVector[2]);
+                Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, (float)(SCALE*(calibrationDevicePos.x - ourPos.x)), (float)(SCALE*(calibrationDevicePos.y - ourPos.y)), (float)(SCALE * zFlip * (calibrationDevicePos.z - ourPos.z)), mUpVector0[0], mUpVector0[1], mUpVector0[2]);
             } else {
                 Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 0, mLookAtVector[0], mLookAtVector[1], mLookAtVector[2], mUpVector[0], mUpVector[1], mUpVector[2]);
             }
@@ -150,7 +202,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
             for (Map.Entry<Integer, Point3D> e : positions.entrySet()) {
                 if (e.getKey() != mTagParser.ourId) {
                     Point3D pos = e.getValue();
-                    mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, 5f * (float) (pos.x - ourPos.x), 5f * (float) (pos.y - ourPos.y), 5f * (float) (pos.z - ourPos.z), "Tag " + e.getKey());
+                    mPositionMarker.drawAtPosition(mVPMatrix, mInvertedVPMatrix, mInvertedViewMatrix, SCALE * (float) (pos.x - ourPos.x), SCALE * (float) (pos.y - ourPos.y), SCALE * (float)(zFlip * (pos.z - ourPos.z)), "Tag " + e.getKey());
                 }
             }
         }
@@ -270,5 +322,9 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     public float[] getInvertedViewMatrix() {
         return mInvertedViewMatrix;
+    }
+
+    public void flipZ() {
+        this.zFlip *= -1;
     }
 }

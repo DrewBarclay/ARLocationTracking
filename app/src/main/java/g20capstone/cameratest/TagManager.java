@@ -7,10 +7,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.os.Process;
 import android.util.Log;
 
 import com.ftdi.j2xx.D2xxManager;
 import com.ftdi.j2xx.FT_Device;
+
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * Created by Drew on 1/8/2017.
@@ -23,11 +27,13 @@ public class TagManager {
     private UsbDevice usbDevice;
     private FT_Device ftDevice;
     private PendingIntent mPermissionIntent;
+    private TagParser mTagParser;
 
     private static final String ACTION_USB_PERMISSION = "g20capstone.cameratest.USB_PERMISSION";
 
-    public TagManager(Context context) {
+    public TagManager(Context context, TagParser tagParser) {
         this.context = context;
+        this.mTagParser = tagParser;
         mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
 
         //Get main manager for FTDI devices
@@ -37,6 +43,44 @@ public class TagManager {
         } catch (D2xxManager.D2xxException e) {
             e.printStackTrace();
         }
+
+        new Thread(new Runnable() {
+            public void run() {
+                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+                byte[] buffer = new byte[1024];
+                int len;
+
+                while (true) {
+                    try {
+                        FT_Device ftd = getFtDevice();
+
+                        if (ftd != null && ftd.isOpen()) {
+                            int numBytesAvailable = ftd.getQueueStatus();
+
+                            if (numBytesAvailable > 0) {
+                                try {
+                                    len = ftd.read(buffer, Math.min(buffer.length, numBytesAvailable));
+                                } catch (Exception e) {
+                                    len = 0; //device disconnected or something
+                                }
+                                if (len > 0) {
+                                    final String text = new String(buffer, 0, len);
+                                    //Log.d("Runnable", "Read bytes: " + text);
+
+                                    mTagParser.addString(text);
+                                    String s = "";
+                                }
+                            }
+                        }
+
+                        //Thread.sleep(0, 1);
+                        //Thread.yield(); //Sleep just a little so as to not burn infinite battery
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
     }
 
     public void onStart() {
@@ -56,9 +100,57 @@ public class TagManager {
         context.registerReceiver(usbReceiver, filter);
     }
 
+    public void pollConnectionedDevices() {
+        //Look for already connected devices
+        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+        while(deviceIterator.hasNext()){
+            UsbDevice d = deviceIterator.next();
+            tryConnectDevice(d);
+        }
+    }
+
     public void onStop() {
         context.unregisterReceiver(usbReceiver);
         context.unregisterReceiver(usbReceiverDetach);
+    }
+
+    private boolean tryConnectDevice(UsbDevice d) {
+        if (!usbManager.hasPermission(d)) {
+            Log.d("TagManager", "Requesting permission for USB device.");
+            usbManager.requestPermission(d, mPermissionIntent);
+            return false;
+        } else {
+            usbDevice = d;
+            Log.d("TagManager", "Permission granted for USB.");
+            connectToDevice();
+            return true;
+        }
+    }
+
+    public void connectToDevice() {
+        d2xxManager.createDeviceInfoList(context);
+        if (d2xxManager.isFtDevice(usbDevice)) {
+            Log.d("TagManager", "Granted permission for FTDI USB device.");
+            ftDevice = d2xxManager.openByUsbDevice(context, usbDevice);
+            if (ftDevice == null || !ftDevice.isOpen()) {
+                Log.d("TagManager", "Error, clearing.");
+                if (ftDevice == null) {
+                    Log.d("TagManager", "Error, clearing. Was null.");
+                } else {
+                    Log.d("TagManager", "Error, clearing. Open failed.");
+                }
+                //Error, clear everything
+                usbDevice = null;
+                setFtDevice(null);
+                return;
+            }
+
+            Log.v("TagManager", "Successfully opened.");
+            ftDevice.setBaudRate(115200);
+        } else {
+            Log.d("TagManager", "Device not FTDI.");
+        }
     }
 
     private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
@@ -68,46 +160,17 @@ public class TagManager {
             String action = intent.getAction();
             usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 
-            if (!usbManager.hasPermission(usbDevice)) {
-                Log.d("Drew", "requesting permission");
-                usbManager.requestPermission(usbDevice, mPermissionIntent);
-                return;
-            }
+            boolean connected = tryConnectDevice(usbDevice);
 
-            if (ACTION_USB_PERMISSION.equals(action)) {
+            if (!connected && ACTION_USB_PERMISSION.equals(action)) {
                 if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                    Log.d("Drew", "Permission granted for USB.");
+                    Log.d("TagManager", "Permission granted for USB.");
                     connectToDevice();
                 } else {
-                    Log.d("Drew", "USB permission not granted.");
+                    Log.d("TagManager", "USB permission not granted.");
                 }
             } else {
-                Log.d("Drew", "Action not correct: " + action);
-            }
-        }
-
-        public void connectToDevice() {
-            d2xxManager.createDeviceInfoList(context);
-            if (d2xxManager.isFtDevice(usbDevice)) {
-                Log.d("Drew", "Granted permission for FTDI USB device.");
-                ftDevice = d2xxManager.openByUsbDevice(context, usbDevice);
-                if (ftDevice == null || !ftDevice.isOpen()) {
-                    Log.d("Drew", "Error, clearing.");
-                    if (ftDevice == null) {
-                        Log.d("Drew", "Error, clearing. Was null.");
-                    } else {
-                        Log.d("Drew", "Error, clearing. Open failed.");
-                    }
-                    //Error, clear everything
-                    usbDevice = null;
-                    setFtDevice(null);
-                    return;
-                }
-
-                Log.v("Drew", "Successfully opened.");
-                ftDevice.setBaudRate(19200);
-            } else {
-                Log.d("Drew", "Device not FTDI.");
+                Log.d("TagManager", "Action not correct: " + action);
             }
         }
     };

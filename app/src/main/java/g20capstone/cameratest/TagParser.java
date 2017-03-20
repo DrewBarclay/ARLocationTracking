@@ -3,6 +3,7 @@ package g20capstone.cameratest;
 import android.util.Log;
 import android.util.Pair;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,11 +39,11 @@ public class TagParser {
                 int id1 = sc.nextInt();
                 int id2 = sc.nextInt();
                 float range = Math.abs(sc.nextFloat());
-                if (range < 1) {
-                    range = 1f;
+                if (range < 0.5f) {
+                    range = 0.5f;
                 }
                 //Sanity check it...
-                if (range > -5f && range < 1000f) {
+                if (range < 1000f) {
                     if (ranges.containsKey(Pair.create(id1, id2))) {
                         float oldRange = ranges.get(Pair.create(id1, id2));
                         float newRange = oldRange * 0.7f + range * 0.3f;
@@ -59,6 +60,7 @@ public class TagParser {
                 ourId = id;
             }
         } catch (Exception e) {
+            //Corrupt transmission
             e.printStackTrace();
             return;
         }
@@ -66,7 +68,7 @@ public class TagParser {
 
     public synchronized HashMap<Integer, Point3D> getPositions() {
         //Debug code:
-        if (true) {
+        if (false) {
             HashMap<Integer, Point3D> debugPos = new HashMap<>();
             debugPos.put(0, new Point3D(0, 0, 0));
             debugPos.put(1, new Point3D(5, 5, 0));
@@ -108,6 +110,8 @@ public class TagParser {
             distances[idToIndex.get(p.first)][idToIndex.get(p.second)] = range;
         }
 
+        Log.d("TagParser", Arrays.deepToString(distances));
+
         Point3D[] positions = new Point3D[distances.length];
         for (int i = 0; i < positions.length; i++) {
             positions[i] = new Point3D(0, 0, 0);
@@ -140,12 +144,15 @@ public class TagParser {
         //d[2][3]^2 == delta_x^2 + pos2.y^2 - 2*pos2.y*cos(angle)*temp.y + (cos(angle)*temp.y)^2 + temp.y^2 - cos^2(angle)*temp.y^2
         //Simplify this ugly thing...
         //(temp.y^2-temp.y^2)*cos^2(angle) - 2*pos2.y*temp.y*cos(angle) + (delta_x^2 - d[2][3]^2 + pos2.y^2 + temp.y^2) = 0
-        //I'll admit I thought it'd be a quadratic but it turns out the first part cancels, leaving us with...
+        //I'll admit I thought it'd be a quadratic (since in advance I know there should be two solutions) but it turns out the first part cancels, leaving us with...
         //2*pos2.y*temp.y*cos(angle) = delta_x^2 - d[2][3]^2 + pos2.y^2 + temp.y^2
         //cos(angle) = (delta_x^2 - d[2][3]^2 + pos2.y^2 + temp.y^2) / (2*pos2.y*temp.y)
         //angle = acos((delta_x^2 - d[2][3]^2 + pos2.y^2 + temp.y^2) / (2*pos2.y*temp.y))
-        double deltaX = (temp.x - positions[2].x);
-        double angle = Math.acos((deltaX*deltaX - distances[2][3]*distances[2][3] + positions[2].y*positions[2].y + temp.y*temp.y) / (2 * positions[2].y * temp.y));
+        //And with the acos, we have our two solutions
+
+        //However, this does not work if the distance between anchors 3 and 4 cannot be placed the rotated circle. So we must check for that.
+        //If it is the case, we select the nearest point on the circle. This is done in the getAngleOfRotation method.
+        double angle = getAngleOfRotation(temp, positions[2], distances[2][3]);
         positions[3] = new Point3D(temp.x, temp.y * Math.cos(angle), temp.y * Math.sin(angle));
 
         //Now for the tricky part. Before, any of the distances between anchors could be off/noisy and we had an exact mathematical solution.
@@ -157,8 +164,7 @@ public class TagParser {
         for (int i = 4; i < distances.length; i++) {
             //For each tag (index i)...
             temp = calculate2DDistance(distances[0][1], distances[0][i], distances[1][i]);
-            deltaX = (temp.x - positions[2].x);
-            angle = Math.acos((deltaX*deltaX - distances[2][i]*distances[2][i] + positions[2].y*positions[2].y + temp.y*temp.y) / (2 * positions[2].y * temp.y));
+            angle = getAngleOfRotation(temp, positions[2], distances[2][i]);
             //Because cos(x) = cos(-x), we need to check now if we want -angle or +angle (before we arbitrarily chose +angle but we can't do that any longer)
             //We can do this by making the point for each angle and choosing whichever has less of an error to anchor 4 (index 3)
             Point3D posAnglePoint = new Point3D(temp.x, temp.y * Math.cos(angle), temp.y * Math.sin(angle));
@@ -181,10 +187,34 @@ public class TagParser {
         return idPositions;
     }
 
+    //Rotating point temp around the x axis and the return the angle which brings it closest to a2
+    private static double getAngleOfRotation(Point3D temp, Point3D a2, double d23) {
+        double nearestDistance = temp.distanceTo(a2);
+        Point3D longestPoint = new Point3D(temp.x, -temp.y, 0); //a full 180 degree rotation is the farthest away possible
+        double longestDistance = longestPoint.distanceTo(a2);
+
+        if (d23 <= nearestDistance) {
+            return 0; //do not rotate to get nearest
+        } else if (d23 >= longestDistance) {
+            return Math.PI; //180 degree rotation
+        } else {
+            //The point is on the circle
+            double deltaX = (temp.x - a2.x);
+            double cos = (deltaX * deltaX - d23 * d23 + a2.y * a2.y + temp.y * temp.y) / (2 * a2.y * temp.y);
+            cos = Math.max(cos, -1);
+            cos = Math.min(cos, 1);
+            double angle = Math.acos(cos);
+            return angle;
+        }
+    }
+
     //c is the side opposite the 'origin' point,
     //b is the length from origin to point we're calculating the 2D position of
     private static Point3D calculate2DDistance(double a, double b, double c) {
-        double C = Math.acos((a*a + b*b - c*c) / (2 * a * b));
+        double cos = (a*a + b*b - c*c) / (2 * a * b);
+        cos = Math.min(1, cos);
+        cos = Math.max(-1, cos);
+        double C = Math.acos(cos);
         return new Point3D(Math.cos(C) * b, Math.sin(C) * b, 0);
     }
 }

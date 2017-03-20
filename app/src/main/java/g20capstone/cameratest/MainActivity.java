@@ -23,6 +23,7 @@ import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -44,6 +45,8 @@ import java.util.Map;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import static android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+
 public class MainActivity extends AppCompatActivity {
 
     public static final int PERMISSIONS_REQUEST_CAMERA = 42;
@@ -60,8 +63,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Hide both the navigation bar and the status bar.
+        View decorView = getWindow().getDecorView();
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+        decorView.setSystemUiVisibility(uiOptions);
+
+        this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
         //Stuff for USB...
-        mTagManager = new TagManager(this);
+        mTagManager = new TagManager(this, mTagParser);
 
         //Set up openGL rendering
         mGLSurfaceView = new GLSurfaceView(this);
@@ -80,8 +92,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 if (ContextCompat.checkSelfPermission(thisActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "Has camera permissions, setting up camera.");
                     setupCamera();
                 } else {
+                    Log.d("MainActivity", "Requesting camera permissions.");
                     ActivityCompat.requestPermissions(thisActivity, new String[]{Manifest.permission.CAMERA}, PERMISSIONS_REQUEST_CAMERA);
                 }
             }
@@ -98,39 +112,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         final Activity activity = this;
-
-        new Thread(new Runnable() {
-            public void run() {
-                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-                while (true) {
-                    FT_Device ftd = mTagManager.getFtDevice();
-
-
-                    if (ftd != null && ftd.isOpen()) {
-                        byte[] buffer = new byte[64];
-                        int len;
-                        try {
-                            len = ftd.read(buffer);
-                        } catch (Exception e) {
-                            return; //device closed or something
-                        }
-                        if (len > 0) {
-                            final String text = new String(buffer, 0, len);
-                            //Log.d("Runnable", "Read bytes: " + text);
-
-                            mTagParser.addString(text);
-                            String s = "";
-                        }
-                    }
-
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
     }
 
     @Override
@@ -163,45 +144,59 @@ public class MainActivity extends AppCompatActivity {
         // Hide both the navigation bar and the status bar.
         View decorView = getWindow().getDecorView();
         int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN;
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         decorView.setSystemUiVisibility(uiOptions);
 
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event){
-        int action = MotionEventCompat.getActionMasked(event);
-
-        switch(action) {
-            case (MotionEvent.ACTION_DOWN):
-                if (mARRenderer != null) {
-                    if (mARRenderer.isCalibrating()) {
-                        //We're done calibrating now
-                        //The resulting calibration matrix is equal to the calibration matrix in play * the inverted raw rotation matrix
-                        float[] invertedRotationMatrixRaw = new float[16];
-                        Matrix.invertM(invertedRotationMatrixRaw, 0, mARRenderer.getRotationMatrixRaw(), 0);
-                        Matrix.multiplyMM(mARRenderer.getRotationCalibrationMatrix(), 0, mARRenderer.getInvertedViewMatrix(), 0, invertedRotationMatrixRaw, 0);
-                        mARRenderer.setCalibrating(false);
-                    } else {
-                        Matrix.setIdentityM(mARRenderer.getRotationCalibrationMatrix(), 0);
-                        mARRenderer.setCalibrating(true);
-                    }
-                }
-                return true;
-            default:
-                return super.onTouchEvent(event);
+    final GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
+        @Override
+        public boolean onDoubleTapEvent(MotionEvent e) {
+            if (mARRenderer != null) {
+                mARRenderer.flipZ();
+            }
+            return true;
         }
-    }
+
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            if (mARRenderer != null) {
+                if (mARRenderer.isCalibrating()) {
+                    //We're done calibrating now
+                    //The resulting calibration matrix is equal to the calibration matrix in play * the inverted raw rotation matrix
+                    float[] invertedRotationMatrixRaw = new float[16];
+                    Matrix.invertM(invertedRotationMatrixRaw, 0, mARRenderer.getRotationMatrixRaw(), 0);
+                    Matrix.multiplyMM(mARRenderer.getRotationCalibrationMatrix(), 0, mARRenderer.getInvertedViewMatrix(), 0, invertedRotationMatrixRaw, 0);
+                    mARRenderer.setCalibrating(false);
+                } else {
+                    Matrix.setIdentityM(mARRenderer.getRotationCalibrationMatrix(), 0);
+                    mARRenderer.setCalibrating(true);
+                }
+            }
+            return true;
+        }
+    });
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return gestureDetector.onTouchEvent(event);
+    };
 
     protected void setupCamera() {
         try {
+            Log.d("MainActivity", "Setting up camera...");
             CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            Log.d("MainActivity", "Got camera manager. Length of camera list: " + manager.getCameraIdList().length);
             String camId = manager.getCameraIdList()[0];
+
+            Log.d("MainActivity", "Camera found.");
 
             try {
                 mCameraCallback = new CameraCallback(mSurfaceView);
                 manager.openCamera(camId, mCameraCallback, null);
+                Log.d("MainActivity", "Camera opened?");
+                mTagManager.pollConnectionedDevices(); //Start looking for USB; this is put here because if it comes before the permission dialog crashes the app
             } catch (SecurityException e) {
                 e.printStackTrace();
             }

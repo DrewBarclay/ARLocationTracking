@@ -23,12 +23,14 @@ package g20capstone.cameratest;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import com.android.texample2.GLText;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 public class PositionMarker {
     // S, T (or X, Y)
@@ -179,13 +181,21 @@ public class PositionMarker {
     }
 
     //x and y are in NDC
-    public float[] offScreenModelMatrix(float[] vpMatrix, float[] invertedVPMatrix, float[] invertedViewMatrix, float x, float y) {
+    public float[] offScreenModelMatrix(float[] vpMatrix, float[] invertedVPMatrix, float[] invertedViewMatrix, float x, float y, float z) {
         //Find border position
         //Find where [x, y] intersects with the NDC box (ignore Z component).  Whichever component is larger dictates this.
         //If we divide by the absolute value of the larger component, we will make our vector land right on the edge of the NCD box
         //(which is to say one of x and y will be = 1).
         float divisor = Math.max(Math.abs(x), Math.abs(y));
-        float[] edgeVector = {x/divisor, y/divisor, 0.6f, 1}; //homogenous component set to 1, z value determines how large the arrow is later
+        float[] edgeVector;
+        if (z <= 1) {
+            //Not sure why this is required; look into this later TODO
+            //Also check y values they are weird ???
+            edgeVector = new float[]{x / divisor, y / divisor, 0.97f, 1}; //homogenous component set to 1, z value determines how large the arrow is later
+        } else {
+            edgeVector = new float[]{-x / divisor, -y / divisor, 0.97f, 1}; //homogenous component set to 1, z value determines how large the arrow is later
+        }
+        //Log.d("PositionMarker", "Point: " + Arrays.toString(edgeVector));
 
         //Rotate based on vector in NDC, then rotate on inverted view matrix so it faces the camera
         float[] rotateToFaceEdgeMatrix = new float[16];
@@ -226,6 +236,11 @@ public class PositionMarker {
             }
         }
 
+        Math3D.fixHomogenous(pNDC);
+
+        Log.d("ARRenderer", "On Screen: " + onScreen);
+        Log.d("ARRenderer", "Point: " + Arrays.toString(pNDC));
+
         //Based on whether this is on the screen or not, we will create different model matrices and choose different textures
         float[] modelMatrix;
         int textureHandle;
@@ -233,7 +248,8 @@ public class PositionMarker {
             modelMatrix = onScreenModelMatrix(invertedViewMatrix, x, y, z);
             textureHandle = mTextureOnScreenDataHandle;
         } else {
-            modelMatrix = offScreenModelMatrix(vpMatrix, invertedVPMatrix, invertedViewMatrix, pNDC[0], pNDC[1]);
+            Math3D.fixHomogenous(pNDC);
+            modelMatrix = offScreenModelMatrix(vpMatrix, invertedVPMatrix, invertedViewMatrix, pNDC[0], pNDC[1], pNDC[2]);
             textureHandle = mTextureOffScreenDataHandle;
         }
 
