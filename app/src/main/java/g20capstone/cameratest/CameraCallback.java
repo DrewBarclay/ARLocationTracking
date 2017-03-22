@@ -3,6 +3,7 @@ package g20capstone.cameratest;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
+import android.util.Range;
 import android.view.Surface;
 import android.view.SurfaceView;
 
@@ -15,10 +16,18 @@ import java.util.Arrays;
 public class CameraCallback extends CameraDevice.StateCallback {
     private SurfaceView mSurfaceView;
     private CaptureRequest mRequest;
-    private CameraCaptureSession mSession;
+    public CameraCaptureSession mSession;
+    private CameraDevice mCamera;
+    private Range highestFPS;
 
-    public CameraCallback(SurfaceView sv) {
+    public CameraCallback(SurfaceView sv,  Range<Integer>[] fpsRange) {
         mSurfaceView = sv;
+        highestFPS = new Range(0, 0);
+        for (Range r : fpsRange) {
+            if (r.getUpper().compareTo(highestFPS.getUpper()) > 0) {
+                highestFPS = r; //Calculate highest FPS we can get out of the camera
+            }
+        }
     }
 
     public void startCapturing() {
@@ -29,16 +38,9 @@ public class CameraCallback extends CameraDevice.StateCallback {
         }
     }
 
-    public void stopCapturing() {
-        try {
-            mSession.stopRepeating();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void onOpened(final CameraDevice camera) {
+        mCamera = camera;
         try {
             final Surface surface = mSurfaceView.getHolder().getSurface();
             camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
@@ -47,6 +49,8 @@ public class CameraCallback extends CameraDevice.StateCallback {
                     try {
                         mSession = session;
                         CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                        //builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, highestFPS);
                         builder.addTarget(surface);
                         mRequest = builder.build();
                         startCapturing();
@@ -75,15 +79,13 @@ public class CameraCallback extends CameraDevice.StateCallback {
 
     }
 
-    public void onPause() {
-        if (mSession != null && mRequest != null) {
-            stopCapturing();
+    public void stopCamera() {
+        if (mSession != null) {
+            mSession.close();
         }
-    }
 
-    public void onResume() {
-        if (mSession != null && mRequest != null) {
-            startCapturing();
+        if (mCamera != null) {
+            mCamera.close();
         }
     }
 };

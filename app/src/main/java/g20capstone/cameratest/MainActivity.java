@@ -54,10 +54,11 @@ public class MainActivity extends AppCompatActivity {
     private GLSurfaceView mGLSurfaceView;
     private SurfaceView mSurfaceView;
     private ARRenderer mARRenderer;
-    private CameraCallback mCameraCallback;
 
     private TagManager mTagManager;
     private final TagParser mTagParser = new TagParser();
+
+    private CameraWrapper mCameraWrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,51 +88,26 @@ public class MainActivity extends AppCompatActivity {
         //Set up camera
         mSurfaceView = new SurfaceView(this);
         addContentView(mSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        final Activity thisActivity = this;
-        mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                if (ContextCompat.checkSelfPermission(thisActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                    Log.d("MainActivity", "Has camera permissions, setting up camera.");
-                    setupCamera();
-                } else {
-                    Log.d("MainActivity", "Requesting camera permissions.");
-                    ActivityCompat.requestPermissions(thisActivity, new String[]{Manifest.permission.CAMERA}, PERMISSIONS_REQUEST_CAMERA);
-                }
-            }
 
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-
-            }
-        });
-
-        final Activity activity = this;
+        mCameraWrapper = new CameraWrapper(this, mSurfaceView);
     }
 
     @Override
     protected void onPause() {
-        super.onPause();
-
         mTagManager.onPause();
 
         mARRenderer.onPause();
 
         mGLSurfaceView.onPause();
 
-        if (mCameraCallback != null) {
-            mCameraCallback.onPause();
-        }
+        mCameraWrapper.onPause();
+
+        super.onPause();
     }
 
     @Override
     protected void onResume() {
-        super.onResume();
+        mTagManager.pollConnectedDevices(); //Start looking for USB; TODO check if this causes an error
 
         mTagManager.onResume();
 
@@ -139,9 +115,7 @@ public class MainActivity extends AppCompatActivity {
 
         mGLSurfaceView.onResume();
 
-        if (mCameraCallback != null) {
-            mCameraCallback.onResume();
-        }
+        mCameraWrapper.onResume();
 
         // Hide both the navigation bar and the status bar.
         View decorView = getWindow().getDecorView();
@@ -151,6 +125,8 @@ public class MainActivity extends AppCompatActivity {
         decorView.setSystemUiVisibility(uiOptions);
 
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+
+        super.onResume();
     }
 
     final GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
@@ -185,35 +161,13 @@ public class MainActivity extends AppCompatActivity {
         return gestureDetector.onTouchEvent(event);
     };
 
-    protected void setupCamera() {
-        try {
-            Log.d("MainActivity", "Setting up camera...");
-            CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-            Log.d("MainActivity", "Got camera manager. Length of camera list: " + manager.getCameraIdList().length);
-            String camId = manager.getCameraIdList()[0];
-
-            Log.d("MainActivity", "Camera found.");
-
-            try {
-                mCameraCallback = new CameraCallback(mSurfaceView);
-                manager.openCamera(camId, mCameraCallback, null);
-                Log.d("MainActivity", "Camera opened?");
-                mTagManager.pollConnectedDevices(); //Start looking for USB; this is put here because if it comes before the permission dialog crashes the app
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case PERMISSIONS_REQUEST_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    setupCamera();
+                    mCameraWrapper.onPermissionGranted();
                 }
             }
         }

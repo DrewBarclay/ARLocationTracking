@@ -238,8 +238,8 @@ public class PositionMarker {
 
         Math3D.fixHomogenous(pNDC);
 
-        Log.d("ARRenderer", "On Screen: " + onScreen);
-        Log.d("ARRenderer", "Point: " + Arrays.toString(pNDC));
+        //Log.d("ARRenderer", "On Screen: " + onScreen);
+        //Log.d("ARRenderer", "Point: " + Arrays.toString(pNDC));
 
         //Based on whether this is on the screen or not, we will create different model matrices and choose different textures
         float[] modelMatrix;
