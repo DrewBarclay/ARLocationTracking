@@ -20,6 +20,7 @@ import com.android.texample2.GLText;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -58,12 +59,14 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private boolean mCalibrating = false;
 
     private long mPositionTimer;
-    private Map<Integer, Point3D> positions;
+    private AtomicReference<Map<Integer, Point3D>> positionsRef = new AtomicReference<>(null);
     private Point3D ourPos;
 
     private float zFlip = 1;
 
-    private static final float SCALE = 45f;
+    private static final float SCALE = 1f;//45f;
+
+    private PositionCalculationRunnable curPosRunnable;
 
     public ARRenderer(Activity context, SensorManager sensorManager, Display display, TagParser tagParser) {
         mContext = context;
@@ -77,10 +80,24 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     public void onResume() {
         mSensorManager.registerListener(this, mRotationSensor, 10000); //10ms
+
+        //Start up position calculation
+        if (curPosRunnable != null) {
+            curPosRunnable.keepRunning = false;
+            curPosRunnable = null;
+        }
+        curPosRunnable = new PositionCalculationRunnable();
+        new Thread(curPosRunnable).start();
     }
 
     public void onPause() {
         mSensorManager.unregisterListener(this);
+
+        //Stop position calculation
+        if (curPosRunnable != null) {
+            curPosRunnable.keepRunning = false;
+            curPosRunnable = null;
+        }
     }
 
     @Override
@@ -153,22 +170,32 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         }*/
     }
 
+    //Constantly calculates new positions
+    protected class PositionCalculationRunnable implements Runnable {
+        public volatile boolean keepRunning = true;
+
+        @Override
+        public void run() {
+            while (keepRunning) { //If told to stop, stop!
+                try {
+                    Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
+                    if (possiblePositions != null) {
+                        Map<Integer, Point3D> positions = possiblePositions;
+                        positionsRef.lazySet(positions);
+                        //Log.d("ARRenderer", positions.toString());
+                    }
+                    Thread.yield();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     @Override
     public void onDrawFrame(GL10 gl) {
-        //Every 50 ms...
-        try {
-            if (System.nanoTime() - mPositionTimer > 200e-3 * 1e9) {
-                Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
-                if (possiblePositions != null) {
-                    positions = possiblePositions;
-                    ourPos = positions.get(mTagParser.ourId);
-                    Log.d("ARRenderer", positions.toString());
-                }
-                mPositionTimer = System.nanoTime();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Map<Integer, Point3D> positions = positionsRef.get(); //multithreaded
+        ourPos = positions.get(mTagParser.ourId);
 
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);

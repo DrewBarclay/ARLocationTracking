@@ -28,6 +28,7 @@ public class TagManager {
     private FT_Device ftDevice;
     private PendingIntent mPermissionIntent;
     private TagParser mTagParser;
+    private TagReadRunnable curReadRunnable;
 
     private static final String ACTION_USB_PERMISSION = "g20capstone.cameratest.USB_PERMISSION";
 
@@ -43,47 +44,50 @@ public class TagManager {
         } catch (D2xxManager.D2xxException e) {
             e.printStackTrace();
         }
-
-        new Thread(new Runnable() {
-            public void run() {
-                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-                byte[] buffer = new byte[1024];
-                int len;
-
-                while (true) {
-                    try {
-                        FT_Device ftd = getFtDevice();
-
-                        if (ftd != null && ftd.isOpen()) {
-                            int numBytesAvailable = ftd.getQueueStatus();
-
-                            if (numBytesAvailable > 0) {
-                                try {
-                                    len = ftd.read(buffer, Math.min(buffer.length, numBytesAvailable));
-                                } catch (Exception e) {
-                                    len = 0; //device disconnected or something
-                                }
-                                if (len > 0) {
-                                    final String text = new String(buffer, 0, len);
-                                    //Log.d("Runnable", "Read bytes: " + text);
-
-                                    mTagParser.addString(text);
-                                    String s = "";
-                                }
-                            }
-                        }
-
-                        //Thread.sleep(0, 1);
-                        //Thread.yield(); //Sleep just a little so as to not burn infinite battery
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
     }
 
-    public void onStart() {
+    protected class TagReadRunnable implements Runnable {
+        public volatile boolean keepRunning = true;
+
+        @Override
+        public void run() {
+            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+            byte[] buffer = new byte[1024];
+            int len;
+
+            while (keepRunning) {
+                try {
+                    FT_Device ftd = getFtDevice();
+
+                    if (ftd != null && ftd.isOpen()) {
+                        int numBytesAvailable = ftd.getQueueStatus();
+
+                        if (numBytesAvailable > 0) {
+                            try {
+                                len = ftd.read(buffer, Math.min(buffer.length, numBytesAvailable));
+                            } catch (Exception e) {
+                                len = 0; //device disconnected or something
+                            }
+                            if (len > 0) {
+                                final String text = new String(buffer, 0, len);
+                                //Log.d("Runnable", "Read bytes: " + text);
+
+                                mTagParser.addString(text);
+                                String s = "";
+                            }
+                        }
+                    }
+
+                    //Thread.sleep(0, 1);
+                    //Thread.yield(); //Sleep just a little so as to not burn infinite battery
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void onResume() {
         //Set up USB device callbacks
         IntentFilter filter = new IntentFilter();
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
@@ -98,9 +102,26 @@ public class TagManager {
         filter = new IntentFilter(ACTION_USB_PERMISSION);
         filter.setPriority(500);
         context.registerReceiver(usbReceiver, filter);
+
+        if (curReadRunnable != null) {
+            curReadRunnable.keepRunning = false;
+            curReadRunnable = null;
+        }
+        curReadRunnable = new TagReadRunnable();
+        new Thread(curReadRunnable).start();
     }
 
-    public void pollConnectionedDevices() {
+    public void onPause() {
+        context.unregisterReceiver(usbReceiver);
+        //context.unregisterReceiver(usbReceiverDetach);
+
+        if (curReadRunnable != null) {
+            curReadRunnable.keepRunning = false;
+            curReadRunnable = null;
+        }
+    }
+
+    public void pollConnectedDevices() {
         //Look for already connected devices
         HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
         Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
@@ -108,11 +129,6 @@ public class TagManager {
             UsbDevice d = deviceIterator.next();
             tryConnectDevice(d);
         }
-    }
-
-    public void onStop() {
-        context.unregisterReceiver(usbReceiver);
-        context.unregisterReceiver(usbReceiverDetach);
     }
 
     private boolean tryConnectDevice(UsbDevice d) {

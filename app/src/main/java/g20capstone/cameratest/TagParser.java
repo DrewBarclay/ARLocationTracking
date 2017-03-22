@@ -68,7 +68,7 @@ public class TagParser {
 
     public synchronized HashMap<Integer, Point3D> getPositions() {
         //Debug code:
-        if (false) {
+        if (true) {
             HashMap<Integer, Point3D> debugPos = new HashMap<>();
             debugPos.put(0, new Point3D(0, 0, 0));
             debugPos.put(1, new Point3D(5, 5, 0));

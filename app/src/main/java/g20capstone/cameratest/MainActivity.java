@@ -118,9 +118,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        mTagManager.onStop();
+        mTagManager.onPause();
 
         mARRenderer.onPause();
+
         mGLSurfaceView.onPause();
 
         if (mCameraCallback != null) {
@@ -132,9 +133,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        mTagManager.onStart();
+        mTagManager.onResume();
 
         mARRenderer.onResume();
+
         mGLSurfaceView.onResume();
 
         if (mCameraCallback != null) {
@@ -196,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                 mCameraCallback = new CameraCallback(mSurfaceView);
                 manager.openCamera(camId, mCameraCallback, null);
                 Log.d("MainActivity", "Camera opened?");
-                mTagManager.pollConnectionedDevices(); //Start looking for USB; this is put here because if it comes before the permission dialog crashes the app
+                mTagManager.pollConnectedDevices(); //Start looking for USB; this is put here because if it comes before the permission dialog crashes the app
             } catch (SecurityException e) {
                 e.printStackTrace();
             }
