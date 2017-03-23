@@ -5,6 +5,8 @@ import android.hardware.SensorManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
+import android.util.Log;
+import android.util.Pair;
 import android.view.Display;
 
 import com.android.texample2.GLText;
@@ -128,7 +130,8 @@ public class ARRenderer implements GLSurfaceView.Renderer {
         public void run() {
             while (keepRunning) { //If told to stop, stop!
                 try {
-                    Map<Integer, Point3D> possiblePositions = mTagParser.getPositions();
+                    Map<Pair<Integer, Integer>, Float> ranges = mTagParser.getRanges();
+                    Map<Integer, Point3D> possiblePositions = PositionCalculation.getPositions(ranges);
                     if (possiblePositions != null) {
                         Map<Integer, Point3D> positions = possiblePositions;
                         positionsRef.lazySet(positions);
