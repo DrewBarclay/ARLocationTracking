@@ -1,4 +1,4 @@
-package g20capstone.cameratest;
+package g20capstone.arlocationtracking;
 
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;

@@ -1,4 +1,4 @@
-package g20capstone.cameratest;
+package g20capstone.arlocationtracking;
 
 /**
  * Created by Drew on 2/16/2017.

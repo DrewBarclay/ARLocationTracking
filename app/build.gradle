@@ -4,7 +4,7 @@ android {
     compileSdkVersion 24
     buildToolsVersion '25.0.0'
     defaultConfig {
-        applicationId "g20capstone.cameratest"
+        applicationId "g20capstone.arlocationtracking"
         minSdkVersion 21
         targetSdkVersion 24
         versionCode 1

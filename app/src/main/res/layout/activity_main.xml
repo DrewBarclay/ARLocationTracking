@@ -4,5 +4,5 @@
     android:id="@+id/activity_main"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context="g20capstone.cameratest.MainActivity">
+    tools:context="g20capstone.cameratest.g20capstone.arlocationtracking.MainActivity">
 </RelativeLayout>

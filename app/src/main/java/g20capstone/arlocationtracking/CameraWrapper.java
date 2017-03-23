@@ -1,4 +1,4 @@
-package g20capstone.cameratest;
+package g20capstone.arlocationtracking;
 
 import android.Manifest;
 import android.app.Activity;
@@ -6,16 +6,11 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.util.Range;
-import android.util.Size;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
-import java.util.Arrays;
 
 /**
  * Created by Drew on 3/21/2017.
