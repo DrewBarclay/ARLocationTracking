@@ -42,25 +42,7 @@ public class TagParser {
             String prefix = sc.next();
             if (prefix.equals("!range")) {
                 //This line is intended to convey range information.
-                int id1 = sc.nextInt();
-                int id2 = sc.nextInt();
-                float range = Math.abs(sc.nextFloat());
-                if (range < 0.5f) {
-                    range = 0.5f;
-                }
-                //Sanity check it...
-                if (range < 1000f) {
-                    if (mRanges.containsKey(Pair.create(id1, id2))) {
-                        float oldRange = mRanges.get(Pair.create(id1, id2));
-                        float newRange = oldRange * 0.7f + range * 0.3f;
-                        mRanges.put(Pair.create(id1, id2), newRange);
-                        mRanges.put(Pair.create(id2, id1), newRange);
-                    } else {
-                        mRanges.put(Pair.create(id1, id2), range);
-                        mRanges.put(Pair.create(id2, id1), range);
-                    }
-                    Log.d("TagParser", "" + id1 + " " + id2 + " " + range);
-                }
+                parseRangeUpdate(sc);
             } else if (prefix.equals("!id")) {
                 int id = sc.nextInt();
                 ourId = id;
@@ -72,7 +54,47 @@ public class TagParser {
         }
     }
 
-    //Thread-safe
+    private void parseRangeUpdate(Scanner sc) {
+        int id1 = sc.nextInt();
+        int id2 = sc.nextInt();
+        float range = Math.abs(sc.nextFloat());
+
+        //0 ranges are bad and can cause division by 0
+        if (range < 0.1f) {
+            range = 0.1f;
+        }
+
+        //Sanity check it...
+        if (range > 1000f) {
+            return;
+        }
+
+        if (!mRanges.containsKey(Pair.create(id1, id2))) {
+            //Cannot apply any filtering as it is the first.
+            mRanges.put(Pair.create(id1, id2), range);
+            mRanges.put(Pair.create(id2, id1), range);
+            return;
+        }
+
+        if (isAnchor(id1) && isAnchor(id2)) {
+            //Filter should dampen noise as much as possible, as anchors are stationary
+            float oldRange = mRanges.get(Pair.create(id1, id2));
+            float newRange = oldRange * 0.99f + range * 0.01f;
+            mRanges.put(Pair.create(id1, id2), newRange);
+            mRanges.put(Pair.create(id2, id1), newRange);
+        } else {
+            float oldRange = mRanges.get(Pair.create(id1, id2));
+            float newRange = oldRange * 0.9f + range * 0.1f;
+            mRanges.put(Pair.create(id1, id2), newRange);
+            mRanges.put(Pair.create(id2, id1), newRange);
+        }
+    }
+
+    public static boolean isAnchor(int id) {
+        return id >= 1 && id <= 4;
+    }
+
+    //Thread-safe. See PositionCalculation.java for the actual calculations.
     public Map<Pair<Integer, Integer>, Float> getRanges() {
         //Debug ranges:
         if (true) {

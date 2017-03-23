@@ -170,9 +170,9 @@ public class PositionMarker {
         Matrix.setIdentityM(translationMatrix, 0);
         Matrix.translateM(translationMatrix, 0, x, y, z);
 
-        float angle = (float)((double)System.nanoTime() / 1e9 * 360) % 360; //1Hz rotation
+        float angle = (float)((double)System.nanoTime() / 1e9 * 360) % 360; //1Hz revolution
         Matrix.multiplyMM(modelMatrix, 0, translationMatrix, 0, invertedViewMatrix, 0);
-        Matrix.scaleM(modelMatrix, 0, 7f, 7f, 7f);
+        Matrix.scaleM(modelMatrix, 0, 0.3f, 0.3f, 0.3f);
         Matrix.rotateM(modelMatrix, 0, angle, 0, 0, 1f); //This is applied first; rotate around z axis over time at 1Hz
 
         return modelMatrix;
@@ -299,7 +299,7 @@ public class PositionMarker {
         if (onScreen) {
             //Draw text
             mGLText.begin(vpMatrix);
-            mGLText.setScale(0.1f);
+            mGLText.setScale(0.005f);
             mGLText.drawC(text, x, y, z, invertedViewMatrix);
             mGLText.end();
         }
