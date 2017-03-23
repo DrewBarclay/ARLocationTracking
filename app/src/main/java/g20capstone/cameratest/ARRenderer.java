@@ -1,24 +1,14 @@
 package g20capstone.cameratest;
 
 import android.app.Activity;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.util.Log;
 import android.view.Display;
-import android.view.Surface;
 
 import com.android.texample2.GLText;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,12 +19,11 @@ import javax.microedition.khronos.opengles.GL10;
  * Created by Drew on 2/16/2017.
  */
 
-public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
+public class ARRenderer implements GLSurfaceView.Renderer {
     private Activity mContext;
     private GLText mGlText;
     private TagParser mTagParser;
-
-    private Display mDisplay;
+    private RotationWrapper mRotationWrapper;
 
     private PositionMarker mPositionMarker;
 
@@ -45,16 +34,12 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     private final float[] mViewMatrix = new float[16];
     private final float[] mInvertedViewMatrix = new float[16];
 
-    private final float[] mRotationMatrixRaw = new float[16];
     private final float[] mRotationCalibrationMatrix = new float[16];
     private final float[] mRotationMatrix = new float[16];
     private final float[] mLookAtVector = new float[4];
     private final float[] mLookAtVector0 = new float[] {0, 0, -1, 1};
     private final float[] mUpVector = new float[4];
     private final float[] mUpVector0 = new float[] {0, 1, 0, 1};
-
-    private SensorManager mSensorManager;
-    private Sensor mRotationSensor;
 
     private boolean mCalibrating = false;
 
@@ -70,16 +55,14 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
 
     public ARRenderer(Activity context, SensorManager sensorManager, Display display, TagParser tagParser) {
         mContext = context;
-        mDisplay = display;
-        mSensorManager = sensorManager;
-        mRotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        mRotationWrapper = new RotationWrapper(sensorManager, display);
         mTagParser = tagParser;
         Matrix.setIdentityM(mRotationCalibrationMatrix, 0);
         mPositionTimer = System.nanoTime();
     }
 
     public void onResume() {
-        mSensorManager.registerListener(this, mRotationSensor, 10000); //10ms
+        mRotationWrapper.onResume();
 
         //Start up position calculation
         if (curPosRunnable != null) {
@@ -91,7 +74,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
     }
 
     public void onPause() {
-        mSensorManager.unregisterListener(this);
+        mRotationWrapper.onPause();
 
         //Stop position calculation
         if (curPosRunnable != null) {
@@ -109,8 +92,8 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         mGlText = new GLText(null, mContext.getAssets()); //based on https://github.com/d3alek/Texample2/blob/master/Texample23D/src/com/android/texample2/GLText.java
         mGlText.load("OpenSans-Regular.ttf", 40, 2, 2);
 
-        int textureOnScreenHandle = loadTexture(mContext, mContext.getResources().getIdentifier("tricolor_circle", "drawable", mContext.getPackageName()));
-        int textureOffScreenHandle = loadTexture(mContext, mContext.getResources().getIdentifier("arrow", "drawable", mContext.getPackageName()));
+        int textureOnScreenHandle = OpenGLUtils.loadTexture(mContext, mContext.getResources().getIdentifier("tricolor_circle", "drawable", mContext.getPackageName()));
+        int textureOffScreenHandle = OpenGLUtils.loadTexture(mContext, mContext.getResources().getIdentifier("arrow", "drawable", mContext.getPackageName()));
         mPositionMarker = new PositionMarker(textureOnScreenHandle, textureOffScreenHandle, mGlText);
     }
 
@@ -122,7 +105,6 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         // this projection matrix is applied to object coordinates
         // in the onDrawFrame() method
         //Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 1f, 200);
-
 
         //From http://blog.db-in.com/cameras-on-opengl-es-2-x/
         float[] matrix = new float[16];
@@ -136,38 +118,6 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         //FOV_V = 2 * atan(screen_height / screen_width * tan(FOV_H/2))
         float fovy = 180f / (float)Math.PI * 2f * (float)Math.atan(Math.tan(angleOfView*Math.PI/180/2/aspectRatio));
         Matrix.perspectiveM(mProjectionMatrix, 0, fovy, aspectRatio, near, far);
-
-/*        // Some calculus before the formula.
-        float size = near * (float)Math.tan(angleOfView * Math.PI / 180 / 2.0);
-        float left = -size, right = size, bottom = -size / aspectRatio, top = size / aspectRatio;
-
-        // First Column
-        matrix[0] = 2 * near / (right - left);
-        matrix[1] = 0.0f;
-        matrix[2] = 0.0f;
-        matrix[3] = 0.0f;
-
-        // Second Column
-        matrix[4] = 0.0f;
-        matrix[5] = 2 * near / (top - bottom);
-        matrix[6] = 0.0f;
-        matrix[7] = 0.0f;
-
-        // Third Column
-        matrix[8] = (right + left) / (right - left);
-        matrix[9] = (top + bottom) / (top - bottom);
-        matrix[10] = -(far + near) / (far - near);
-        matrix[11] = -1;
-
-        // Fourth Column
-        matrix[12] = 0.0f;
-        matrix[13] = 0.0f;
-        matrix[14] = -(2 * far * near) / (far - near);
-        matrix[15] = 0.0f;
-
-        for (int i = 0; i < matrix.length; i++) {
-            mProjectionMatrix[i] = matrix[i];
-        }*/
     }
 
     //Constantly calculates new positions
@@ -201,7 +151,7 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         //Start by doing the rotation matrix...
-        Matrix.multiplyMM(mRotationMatrix, 0, mRotationCalibrationMatrix, 0, mRotationMatrixRaw, 0);
+        Matrix.multiplyMM(mRotationMatrix, 0, mRotationCalibrationMatrix, 0, mRotationWrapper.getRotationMatrixRaw(), 0);
 
         Matrix.multiplyMV(mLookAtVector, 0, mRotationMatrix, 0, mLookAtVector0, 0);
         Matrix.multiplyMV(mUpVector, 0, mRotationMatrix, 0, mUpVector0, 0);
@@ -235,120 +185,18 @@ public class ARRenderer implements GLSurfaceView.Renderer, SensorEventListener {
         }
     }
 
-    //Code copied from Google's sample code.
-    public static int loadShader(int type, String shaderCode){
-        // create a vertex shader type (GLES20.GL_VERTEX_SHADER)
-        // or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
-        int shader = GLES20.glCreateShader(type);
-
-        // add the source code to the shader and compile it
-        GLES20.glShaderSource(shader, shaderCode);
-        GLES20.glCompileShader(shader);
-
-        return shader;
-    }
-
-    //Code copied from http://www.learnopengles.com/android-lesson-four-introducing-basic-texturing/
-    public static int loadTexture(final Context context, final int resourceId)
-    {
-        final int[] textureHandle = new int[1];
-
-        GLES20.glGenTextures(1, textureHandle, 0);
-
-        if (textureHandle[0] != 0)
-        {
-            final BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inScaled = false;   // No pre-scaling
-
-            // Read in the resource
-            final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId, options);
-
-            // Bind to the texture in OpenGL
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
-
-            // Set filtering
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-
-            // Load the bitmap into the bound texture.
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-
-            // Recycle the bitmap, since its data has been loaded into OpenGL.
-            bitmap.recycle();
+    public void toggleCalibrating() {
+        if (mCalibrating) {
+            //We're done calibrating now
+            //The resulting calibration matrix is equal to the calibration matrix in play * the inverted raw rotation matrix
+            float[] invertedRotationMatrixRaw = new float[16];
+            Matrix.invertM(invertedRotationMatrixRaw, 0, mRotationWrapper.getRotationMatrixRaw(), 0);
+            Matrix.multiplyMM(mRotationCalibrationMatrix, 0, mInvertedViewMatrix, 0, invertedRotationMatrixRaw, 0);
+            mCalibrating = false;
+        } else {
+            Matrix.setIdentityM(mRotationCalibrationMatrix, 0);
+            mCalibrating = true;
         }
-
-        if (textureHandle[0] == 0)
-        {
-            throw new RuntimeException("Error loading texture.");
-        }
-
-        return textureHandle[0];
-    }
-
-    //Copied from Google's sample code
-    public static void checkGlError(String glOperation) {
-        int error;
-        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-            Log.e("OpenGL", glOperation + ": glError " + error);
-            throw new RuntimeException(glOperation + ": glError " + error);
-        }
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-            float[] origMatrix = new float[16];
-            float[] tempMatrix = new float[16];
-            SensorManager.getRotationMatrixFromVector(origMatrix, event.values);
-
-            //Remap based on device orientation.
-            switch (mDisplay.getRotation()) {
-                case Surface.ROTATION_0:
-                    SensorManager.remapCoordinateSystem(origMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Y, tempMatrix);
-                    break;
-                case Surface.ROTATION_90:
-                    SensorManager.remapCoordinateSystem(origMatrix, SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, tempMatrix);
-                    break;
-                case Surface.ROTATION_180:
-                    SensorManager.remapCoordinateSystem(origMatrix, SensorManager.AXIS_MINUS_X, SensorManager.AXIS_MINUS_Y, tempMatrix);
-                    break;
-                case Surface.ROTATION_270:
-                    SensorManager.remapCoordinateSystem(origMatrix, SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X, tempMatrix);
-                    break;
-            }
-
-            Matrix.transposeM(mRotationMatrixRaw, 0, tempMatrix, 0);
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
-    public float[] getRotationMatrixRaw() {
-        return mRotationMatrixRaw;
-    }
-
-    public float[] getRotationCalibrationMatrix() {
-        return mRotationCalibrationMatrix;
-    }
-
-    public float[] getRotationMatrix() {
-        return mRotationMatrix;
-    }
-
-
-    public boolean isCalibrating() {
-        return mCalibrating;
-    }
-
-    public void setCalibrating(boolean mCalibrating) {
-        this.mCalibrating = mCalibrating;
-    }
-
-    public float[] getInvertedViewMatrix() {
-        return mInvertedViewMatrix;
     }
 
     public void flipZ() {

@@ -23,14 +23,12 @@ package g20capstone.cameratest;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import com.android.texample2.GLText;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 public class PositionMarker {
     // S, T (or X, Y)
@@ -145,9 +143,9 @@ public class PositionMarker {
         mIndexBuffer.position(0);
 
         mProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(mProgram, ARRenderer.loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_CODE));
+        GLES20.glAttachShader(mProgram, OpenGLUtils.loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_CODE));
         GLES20.glAttachShader(
-                mProgram, ARRenderer.loadShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE));
+                mProgram, OpenGLUtils.loadShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE));
         GLES20.glLinkProgram(mProgram);
 
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");

@@ -140,17 +140,7 @@ public class MainActivity extends AppCompatActivity {
 
         public boolean onSingleTapConfirmed(MotionEvent e) {
             if (mARRenderer != null) {
-                if (mARRenderer.isCalibrating()) {
-                    //We're done calibrating now
-                    //The resulting calibration matrix is equal to the calibration matrix in play * the inverted raw rotation matrix
-                    float[] invertedRotationMatrixRaw = new float[16];
-                    Matrix.invertM(invertedRotationMatrixRaw, 0, mARRenderer.getRotationMatrixRaw(), 0);
-                    Matrix.multiplyMM(mARRenderer.getRotationCalibrationMatrix(), 0, mARRenderer.getInvertedViewMatrix(), 0, invertedRotationMatrixRaw, 0);
-                    mARRenderer.setCalibrating(false);
-                } else {
-                    Matrix.setIdentityM(mARRenderer.getRotationCalibrationMatrix(), 0);
-                    mARRenderer.setCalibrating(true);
-                }
+                mARRenderer.toggleCalibrating();
             }
             return true;
         }

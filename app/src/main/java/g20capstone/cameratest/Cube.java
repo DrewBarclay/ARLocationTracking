@@ -130,9 +130,9 @@ public class Cube {
         mIndexBuffer.position(0);
 
         mProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(mProgram, ARRenderer.loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_CODE));
+        GLES20.glAttachShader(mProgram, OpenGLUtils.loadShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_CODE));
         GLES20.glAttachShader(
-                mProgram, ARRenderer.loadShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE));
+                mProgram, OpenGLUtils.loadShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE));
         GLES20.glLinkProgram(mProgram);
 
         mPositionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");

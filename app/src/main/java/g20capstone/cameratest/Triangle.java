@@ -88,9 +88,9 @@ public class Triangle {
         vertexBuffer.position(0);
 
         // prepare shaders and OpenGL program
-        int vertexShader = ARRenderer.loadShader(
+        int vertexShader = OpenGLUtils.loadShader(
                 GLES20.GL_VERTEX_SHADER, vertexShaderCode);
-        int fragmentShader = ARRenderer.loadShader(
+        int fragmentShader = OpenGLUtils.loadShader(
                 GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode);
 
         mProgram = GLES20.glCreateProgram();             // create empty OpenGL Program
@@ -129,11 +129,11 @@ public class Triangle {
 
         // get handle to shape's transformation matrix
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
-        ARRenderer.checkGlError("glGetUniformLocation");
+        OpenGLUtils.checkGlError("glGetUniformLocation");
 
         // Apply the projection and view transformation
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
-        ARRenderer.checkGlError("glUniformMatrix4fv");
+        OpenGLUtils.checkGlError("glUniformMatrix4fv");
 
         // Draw the triangle
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
