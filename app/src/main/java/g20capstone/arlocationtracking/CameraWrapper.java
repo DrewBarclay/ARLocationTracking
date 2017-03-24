@@ -29,11 +29,7 @@ public class CameraWrapper {
         mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                if (ContextCompat.checkSelfPermission(thisActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                    setupCamera();
-                } else {
-                    ActivityCompat.requestPermissions(thisActivity, new String[]{Manifest.permission.CAMERA}, MainActivity.PERMISSIONS_REQUEST_CAMERA);
-                }
+                setupCamera();
             }
 
             @Override
@@ -43,27 +39,34 @@ public class CameraWrapper {
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
-
+                if (mCameraCallback != null) {
+                    mCameraCallback.stopCamera();
+                    mCameraCallback = null;
+                }
             }
         });
     }
 
     protected void setupCamera() {
-        try {
-            CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
-            String[] cameras = manager.getCameraIdList();
-
-            String camId = cameras[0];
-            CameraCharacteristics cc = manager.getCameraCharacteristics(cameras[0]);
-            Range<Integer>[] fpsRange = cc.get(cc.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+        if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             try {
-                mCameraCallback = new CameraCallback(mSurfaceView, fpsRange);
-                manager.openCamera(camId, mCameraCallback, null);
-            } catch (SecurityException e) {
+                CameraManager manager = (CameraManager) mActivity.getSystemService(Context.CAMERA_SERVICE);
+                String[] cameras = manager.getCameraIdList();
+
+                String camId = cameras[0];
+                CameraCharacteristics cc = manager.getCameraCharacteristics(cameras[0]);
+                Range<Integer>[] fpsRange = cc.get(cc.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+                try {
+                    mCameraCallback = new CameraCallback(mSurfaceView, fpsRange, mActivity);
+                    manager.openCamera(camId, mCameraCallback, null);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else {
+            ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.CAMERA}, MainActivity.PERMISSIONS_REQUEST_CAMERA);
         }
     }
 

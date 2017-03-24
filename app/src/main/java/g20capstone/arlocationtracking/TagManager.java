@@ -35,7 +35,7 @@ public class TagManager {
     public TagManager(Context context, TagParser tagParser) {
         this.context = context;
         this.mTagParser = tagParser;
-        mPermissionIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_USB_PERMISSION), 0);
+        mPermissionIntent = PendingIntent.getBroadcast(context, 12, new Intent(ACTION_USB_PERMISSION), 0);
 
         //Get main manager for FTDI devices
         try {
@@ -56,6 +56,7 @@ public class TagManager {
             int len;
 
             while (keepRunning) {
+                long start = 0;
                 try {
                     FT_Device ftd = getFtDevice();
 
@@ -73,12 +74,11 @@ public class TagManager {
                                 //Log.d("Runnable", "Read bytes: " + text);
 
                                 mTagParser.addString(text);
-                                String s = "";
                             }
                         }
                     }
 
-                    //Thread.sleep(0, 1);
+                    Thread.sleep(0, 1);
                     //Thread.yield(); //Sleep just a little so as to not burn infinite battery
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -101,7 +101,7 @@ public class TagManager {
 
         filter = new IntentFilter(ACTION_USB_PERMISSION);
         filter.setPriority(500);
-        context.registerReceiver(usbReceiver, filter);
+        context.registerReceiver(usbReceiverPermission, filter);
 
         if (curReadRunnable != null) {
             curReadRunnable.keepRunning = false;
@@ -113,7 +113,8 @@ public class TagManager {
 
     public void onPause() {
         context.unregisterReceiver(usbReceiver);
-        //context.unregisterReceiver(usbReceiverDetach);
+        context.unregisterReceiver(usbReceiverDetach);
+        context.unregisterReceiver(usbReceiverPermission);
 
         if (curReadRunnable != null) {
             curReadRunnable.keepRunning = false;
@@ -122,26 +123,29 @@ public class TagManager {
     }
 
     public void pollConnectedDevices() {
-        //Look for already connected devices
-        HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
-        Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
-        while(deviceIterator.hasNext()){
-            UsbDevice d = deviceIterator.next();
-            tryConnectDevice(d);
+        if (usbDevice == null) {
+            //Look for already connected devices
+            HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
+            Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+            while (deviceIterator.hasNext()) {
+                UsbDevice d = deviceIterator.next();
+                tryConnectDevice(d);
+            }
         }
     }
 
-    private boolean tryConnectDevice(UsbDevice d) {
-        if (!usbManager.hasPermission(d)) {
+    private void tryConnectDevice(UsbDevice d) {
+/*        if (!usbManager.hasPermission(d)) {
             Log.d("TagManager", "Requesting permission for USB device.");
             usbManager.requestPermission(d, mPermissionIntent);
-            return false;
+            return;
         } else {
             usbDevice = d;
             Log.d("TagManager", "Permission granted for USB.");
             connectToDevice();
-            return true;
-        }
+            return;
+        }*/
+        usbManager.requestPermission(d, mPermissionIntent);
     }
 
     public void connectToDevice() {
@@ -172,30 +176,28 @@ public class TagManager {
     private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("Drew", "USB Received");
-            String action = intent.getAction();
-            usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
-            boolean connected = tryConnectDevice(usbDevice);
-
-            if (!connected && ACTION_USB_PERMISSION.equals(action)) {
-                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                    Log.d("TagManager", "Permission granted for USB.");
-                    connectToDevice();
-                } else {
-                    Log.d("TagManager", "USB permission not granted.");
-                }
-            } else {
-                Log.d("TagManager", "Action not correct: " + action);
-            }
+        //Set usb device so that the polling will be skipped
+        usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+        //tryConnectDevice((UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE));
         }
     };
 
     private final BroadcastReceiver usbReceiverDetach = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            //usbDevice = null;
-            //setFtDevice(null);
+            usbDevice = null;
+            ftDevice = null;
+        }
+    };
+
+    private final BroadcastReceiver usbReceiverPermission = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action) && intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                connectToDevice();
+            }
         }
     };
 

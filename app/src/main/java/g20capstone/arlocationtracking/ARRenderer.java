@@ -137,7 +137,7 @@ public class ARRenderer implements GLSurfaceView.Renderer {
                         positionsRef.lazySet(positions);
                         //Log.d("ARRenderer", positions.toString());
                     }
-                    Thread.yield();
+                    Thread.sleep(0, 1);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

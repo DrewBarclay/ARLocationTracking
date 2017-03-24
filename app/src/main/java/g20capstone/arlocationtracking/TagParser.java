@@ -44,7 +44,7 @@ public class TagParser {
                 //This line is intended to convey range information.
                 parseRangeUpdate(sc);
             } else if (prefix.equals("!id")) {
-                int id = sc.nextInt();
+                int id = Integer.parseInt(sc.next());
                 ourId = id;
             }
         } catch (Exception e) {
@@ -55,9 +55,9 @@ public class TagParser {
     }
 
     private void parseRangeUpdate(Scanner sc) {
-        int id1 = sc.nextInt();
-        int id2 = sc.nextInt();
-        float range = Math.abs(sc.nextFloat());
+        int id1 = Integer.parseInt(sc.next());
+        int id2 = Integer.parseInt(sc.next());
+        float range = Math.abs(Float.parseFloat(sc.next()));
 
         //0 ranges are bad and can cause division by 0
         if (range < 0.1f) {

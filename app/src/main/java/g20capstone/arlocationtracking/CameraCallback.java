@@ -1,8 +1,14 @@
 package g20capstone.arlocationtracking;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.util.Range;
 import android.view.Surface;
 import android.view.SurfaceView;
@@ -19,8 +25,10 @@ public class CameraCallback extends CameraDevice.StateCallback {
     public CameraCaptureSession mSession;
     private CameraDevice mCamera;
     private Range<Integer> highestFPS;
+    Activity mActivity;
 
-    public CameraCallback(SurfaceView sv,  Range<Integer>[] fpsRange) {
+    public CameraCallback(SurfaceView sv,  Range<Integer>[] fpsRange, Activity activity) {
+        mActivity = activity;
         mSurfaceView = sv;
         highestFPS = new Range(0, 0);
         for (Range<Integer> r : fpsRange) {
@@ -44,33 +52,37 @@ public class CameraCallback extends CameraDevice.StateCallback {
 
     @Override
     public void onOpened(final CameraDevice camera) {
-        mCamera = camera;
-        try {
-            final Surface surface = mSurfaceView.getHolder().getSurface();
-            camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    try {
-                        mSession = session;
-                        CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                        builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                        //builder.set(CaptureRequest.CONTROL_SCENE_MODE, CaptureRequest.CONTROL_SCENE_MODE_NIGHT);
-                        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, highestFPS);
-                        builder.addTarget(surface);
-                        mRequest = builder.build();
-                        startCapturing();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+        if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            mCamera = camera;
+            try {
+                final Surface surface = mSurfaceView.getHolder().getSurface();
+                camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+                    @Override
+                    public void onConfigured(CameraCaptureSession session) {
+                        try {
+                            mSession = session;
+                            CaptureRequest.Builder builder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+                            builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                            //builder.set(CaptureRequest.CONTROL_SCENE_MODE, CaptureRequest.CONTROL_SCENE_MODE_NIGHT);
+                            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, highestFPS);
+                            builder.addTarget(surface);
+                            mRequest = builder.build();
+                            startCapturing();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
 
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
+                    @Override
+                    public void onConfigureFailed(CameraCaptureSession session) {
 
-                }
-            }, null);
-        } catch (Exception e) {
-            e.printStackTrace();
+                    }
+                }, null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.CAMERA}, MainActivity.PERMISSIONS_REQUEST_CAMERA);
         }
     }
 
@@ -81,7 +93,6 @@ public class CameraCallback extends CameraDevice.StateCallback {
 
     @Override
     public void onError(CameraDevice camera, int error) {
-
     }
 
     public void stopCamera() {

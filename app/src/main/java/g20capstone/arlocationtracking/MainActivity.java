@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.GestureDetector;
@@ -74,7 +75,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        mTagManager.pollConnectedDevices(); //Start looking for USB; TODO check if this causes an error
+        //Start by polling USB in 5 seconds when the camera has figured itself out
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mTagManager.pollConnectedDevices(); //Start looking for USB; TODO check if this causes an error
+            }
+        }, 1000);
 
         mTagManager.onResume();
 
@@ -123,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSIONS_REQUEST_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length ==1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     mCameraWrapper.onPermissionGranted();
                 }
             }
