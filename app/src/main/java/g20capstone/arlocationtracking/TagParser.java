@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TagParser {
     private HashMap<Pair<Integer, Integer>, Float> mRanges = new HashMap<>();
-    private AtomicReference<HashMap<Pair<Integer, Integer>, Float>> mRangesRef = new AtomicReference<>(null);
+    private AtomicReference<HashMap<Pair<Integer, Integer>, Float>> mRangesRef = new AtomicReference<>(new HashMap<Pair<Integer, Integer>, Float>());
     private String data = "";
     public int ourId = 0;
 
@@ -97,7 +97,7 @@ public class TagParser {
     //Thread-safe. See PositionCalculation.java for the actual calculations.
     public Map<Pair<Integer, Integer>, Float> getRanges() {
         //Debug ranges:
-        if (true) {
+        if (false) {
             Point3D[] debugPositions = new Point3D[4];
             debugPositions[0] = new Point3D(0, 0, 0); //Our position since by default ourID == 0.
             debugPositions[1] = new Point3D(5, 0, 0);

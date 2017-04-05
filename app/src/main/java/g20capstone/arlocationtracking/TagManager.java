@@ -71,7 +71,7 @@ public class TagManager {
                             }
                             if (len > 0) {
                                 final String text = new String(buffer, 0, len);
-                                //Log.d("Runnable", "Read bytes: " + text);
+                                Log.d("Runnable", "Read bytes: " + text);
 
                                 mTagParser.addString(text);
                             }
@@ -167,7 +167,7 @@ public class TagManager {
             }
 
             Log.v("TagManager", "Successfully opened.");
-            ftDevice.setBaudRate(115200);
+            ftDevice.setBaudRate(1000000);
         } else {
             Log.d("TagManager", "Device not FTDI.");
         }
@@ -178,6 +178,7 @@ public class TagManager {
         public void onReceive(Context context, Intent intent) {
         //Set usb device so that the polling will be skipped
         usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+        usbManager.requestPermission(usbDevice, mPermissionIntent);
         //tryConnectDevice((UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE));
         }
     };
