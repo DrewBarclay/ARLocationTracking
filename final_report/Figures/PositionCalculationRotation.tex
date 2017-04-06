@@ -1,0 +1,49 @@
+%\tikzstyle{vertex}=[circle, draw]
+%\begin{tikzpicture}[transform shape]
+%\node[vertex](a0) at (0, 0) {$ a_0 $};
+%\node[vertex](a1) at (6, 0) {$ a_1 $};
+%\node[vertex](a2) at (1.5, 4.3) {$ a_2 $};
+%
+%\begin{scope}[every path/.style={-}, every node/.style={inner sep=1pt}]
+%       \draw (a0) -- node[align=center, anchor=north] {$d_{01}$} (a1);
+%       \draw (a0) -- node[align=center, anchor=south east] {$d_{02}$} (a2);
+%       \draw (a1) -- node[align=center, anchor=south west] {$d_{12}$} (a2);
+%\end{scope} 
+%\end{tikzpicture}
+
+\usetikzlibrary{3d}
+\usetikzlibrary{arrows}
+
+% define styles for the three coordinate planes
+\tikzset{xyp/.style={canvas is xy plane at z=#1}}
+\tikzset{xzp/.style={canvas is xz plane at y=#1}}
+\tikzset{yzp/.style={canvas is yz plane at x=#1}}
+
+\begin{tikzpicture}[x=1cm,y=1cm,z=0.6cm,>=stealth]
+
+\tdplotsetmaincoords{60}{110}
+
+% The axes
+\draw[->] (xyz cs:x=0) -- (xyz cs:x=9) node[above] {$x$};
+\draw[->] (xyz cs:y=0) -- (xyz cs:y=9) node[right] {$z$};
+\draw[->] (xyz cs:z=0) -- (xyz cs:z=9) node[above] {$y$};
+  
+\draw[yzp=8,->,red] (3,0) arc (0:345:3) coordinate (xl);
+  
+%\tdplotsetthetaplanecoords{0}
+%\tdplotdrawarc[tdplot_rotated_coords,->,color=black]{(0,0,4)}{4}{110}{460}{anchor=south west,color=black}{pitch}
+  
+%   \begin{scope}[canvas is zy plane at x=5]
+%     \draw (0,0) circle (6);
+%   %  \draw (-1,0) -- (1,0) (0,-1) -- (0,1);
+%   \end{scope}
+
+\node[fill,circle,inner sep=1.5pt,label={above left:$a1$}] at (0, 0, 0) {};
+\node[fill,circle,inner sep=1.5pt,label={below:$a2$}] at (5,0, 0) {};
+\node[fill,circle,inner sep=1.5pt,label={above:$a3$}] at (2, 0, 3) (a3) {};
+\node[fill,circle,inner sep=1.5pt,label={right:temp}] at (8, 0, 3) (temp) {};
+\draw [dashed] (a3) -- (temp); 
+
+\node[above right,red] at (xl) {$a_4$};
+  
+ \end{tikzpicture}

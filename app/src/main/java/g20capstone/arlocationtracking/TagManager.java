@@ -71,7 +71,7 @@ public class TagManager {
                             }
                             if (len > 0) {
                                 final String text = new String(buffer, 0, len);
-                                Log.d("Runnable", "Read bytes: " + text);
+                                //Log.d("Runnable", "Read bytes: " + text);
 
                                 mTagParser.addString(text);
                             }

@@ -7,8 +7,11 @@ import android.graphics.PixelFormat;
 import android.hardware.SensorManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -28,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
 
     private CameraWrapper mCameraWrapper;
 
+    private GestureDetectorCompat gestureDetector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Set up openGL rendering
         mGLSurfaceView = new GLSurfaceView(this);
+        mGLSurfaceView.setClickable(false);
         addContentView(mGLSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         mGLSurfaceView.setEGLContextClientVersion(2);
         mGLSurfaceView.setEGLConfigChooser(8,8,8,8,16,0);
@@ -55,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Set up camera
         mSurfaceView = new SurfaceView(this);
+        mSurfaceView.setClickable(false);
         addContentView(mSurfaceView, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         mCameraWrapper = new CameraWrapper(this, mSurfaceView);
@@ -104,27 +111,28 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
     }
 
-    final GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
-        @Override
-        public boolean onDoubleTapEvent(MotionEvent e) {
-            if (mARRenderer != null) {
-                mARRenderer.flipZ();
-            }
-            return true;
-        }
-
-        public boolean onSingleTapConfirmed(MotionEvent e) {
-            if (mARRenderer != null) {
-                mARRenderer.toggleCalibrating();
-            }
-            return true;
-        }
-    });
-
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event);
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
+            int width = displayMetrics.widthPixels;
+            int height = displayMetrics.heightPixels;
+            if (event.getX() > width / 2) {
+                Log.d("", "Flip Z");
+                if (mARRenderer != null) {
+                    mARRenderer.flipZ();
+                }
+            } else {
+                Log.d("", "Toggle calibration.");
+                if (mARRenderer != null) {
+                    mARRenderer.toggleCalibrating();
+                }
+            }
+        }
+
+        return super.dispatchTouchEvent(event);
     };
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {

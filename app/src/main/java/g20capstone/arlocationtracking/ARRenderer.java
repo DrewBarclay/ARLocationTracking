@@ -49,7 +49,7 @@ public class ARRenderer implements GLSurfaceView.Renderer {
     private AtomicReference<Map<Integer, Point3D>> positionsRef = new AtomicReference<>(null);
     private Point3D ourPos;
 
-    private float zFlip = 1;
+    private volatile float zFlip = 1;
 
     private static final float SCALE = 1f;//45f;
 
@@ -204,5 +204,6 @@ public class ARRenderer implements GLSurfaceView.Renderer {
 
     public void flipZ() {
         this.zFlip *= -1;
+        Log.d("", "new z :" + this.zFlip);
     }
 }

@@ -26,10 +26,19 @@ public class TagParser {
     public void addString(String newData) {
         data += newData;
         String[] lines = data.split("\n");
-        for (int i = 0; i < lines.length - 1; i++) {
-            parseLine(lines[i]);
+
+        //Java split will not create an empty element at the end of the array if there's a \n as the last character
+        if (newData.charAt(newData.length() - 1) == '\n') {
+            for (int i = 0; i < lines.length; i++) {
+                parseLine(lines[i]);
+            }
+            data = "";
+        } else {
+            for (int i = 0; i < lines.length - 1; i++) {
+                parseLine(lines[i]);
+            }
+            data = lines[lines.length - 1]; //we may have received a partial transmission; deal with this for now
         }
-        data = lines[lines.length - 1]; //we may have received a partial transmission; deal with this for now
 
         //Update the shared variable
         mRangesRef.lazySet(new HashMap<>(mRanges));
@@ -39,13 +48,15 @@ public class TagParser {
         Scanner sc = new Scanner(line);
 
         try {
-            String prefix = sc.next();
-            if (prefix.equals("!range")) {
-                //This line is intended to convey range information.
-                parseRangeUpdate(sc);
-            } else if (prefix.equals("!id")) {
-                int id = Integer.parseInt(sc.next());
-                ourId = id;
+            if (sc.hasNext()) {
+                String prefix = sc.next();
+                if (prefix.equals("!range")) {
+                    //This line is intended to convey range information.
+                    parseRangeUpdate(sc);
+                } else if (prefix.equals("!id")) {
+                    int id = Integer.parseInt(sc.next());
+                    ourId = id;
+                }
             }
         } catch (Exception e) {
             //Corrupt transmission
@@ -84,7 +95,7 @@ public class TagParser {
             mRanges.put(Pair.create(id2, id1), newRange);
         } else {
             float oldRange = mRanges.get(Pair.create(id1, id2));
-            float newRange = oldRange * 0.9f + range * 0.1f;
+            float newRange = oldRange * 0.75f + range * 0.25f;
             mRanges.put(Pair.create(id1, id2), newRange);
             mRanges.put(Pair.create(id2, id1), newRange);
         }
